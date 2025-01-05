@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import json
 import re
 from collections import defaultdict
@@ -17,7 +19,7 @@ from itertools import (
 from math import prod
 from operator import and_, invert, lshift, or_, rshift
 
-from utils import (
+from aoc import (
     East,
     North,
     South,

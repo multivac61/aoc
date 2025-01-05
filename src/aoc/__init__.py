@@ -1,4 +1,4 @@
-# Adopted from https://github.com/norvig/pytudes/blob/main/ipynb/AdventUtils.ipynb
+# Adopted from github.com:norvig/pytudes
 import functools
 import heapq
 import operator
@@ -10,6 +10,7 @@ from itertools import chain, combinations, islice
 from math import gcd, inf
 from statistics import mean, median
 from typing import (
+    Any,
     Callable,
     Collection,
     Iterable,
@@ -19,7 +20,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    Any,
 )
 
 lines = str.splitlines  # By default, split input text into lines
