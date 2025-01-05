@@ -1,5 +1,23 @@
 {
   "nodes": {
+    "aoc-inputs": {
+      "inputs": {
+        "nixpkgs": "nixpkgs"
+      },
+      "locked": {
+        "lastModified": 1736054541,
+        "narHash": "sha256-S9f9Iu0xgeH6MHUWJoxTd8VKF2MGY9gj1AITZ7M40wg=",
+        "ref": "refs/heads/main",
+        "rev": "8c583efac22a2794613a3c70c07bb8fb7c102b1f",
+        "revCount": 3,
+        "type": "git",
+        "url": "ssh://git@github.com/multivac61/aoc-inputs.git"
+      },
+      "original": {
+        "type": "git",
+        "url": "ssh://git@github.com/multivac61/aoc-inputs.git"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": "nixpkgs-lib"
@@ -44,6 +62,22 @@
       "original": {
         "type": "tarball",
         "url": "https://github.com/NixOS/nixpkgs/archive/e9b51731911566bbf7e4895475a87fe06961de0b.tar.gz"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1735834308,
+        "narHash": "sha256-dklw3AXr3OGO4/XT1Tu3Xz9n/we8GctZZ75ZWVqAVhk=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "6df24922a1400241dae323af55f30e4318a6ca65",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
       }
     },
     "pyproject-build-systems": {
@@ -94,8 +128,9 @@
     },
     "root": {
       "inputs": {
+        "aoc-inputs": "aoc-inputs",
         "flake-parts": "flake-parts",
-        "nixpkgs": "nixpkgs",
+        "nixpkgs": "nixpkgs_2",
         "pyproject-build-systems": "pyproject-build-systems",
         "pyproject-nix": "pyproject-nix",
         "treefmt-nix": "treefmt-nix",

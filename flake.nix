@@ -3,6 +3,10 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    aoc-inputs = {
+      url = "git+ssh://git@github.com/multivac61/aoc-inputs.git";
+      flake = false;
+    };
 
     pyproject-nix = {
       url = "github:pyproject-nix/pyproject.nix";
@@ -29,6 +33,7 @@
   outputs =
     inputs@{
       flake-parts,
+      aoc-inputs,
       nixpkgs,
       uv2nix,
       pyproject-nix,
@@ -83,90 +88,6 @@
             programs.mdformat.enable = true;
             programs.toml-sort.enable = true;
           };
-          packages = {
-            download-all = pkgs.writeShellApplication {
-              name = "download-all";
-
-              runtimeInputs = with pkgs; [
-                curl
-                parallel
-              ];
-
-              text = ''
-                if [ -z "''${AOC_SESSION:-}" ]; then
-                  echo "Error: AOC_SESSION must be set"
-                  exit 1
-                fi
-
-                mkdir -p inputs
-
-                YEARS=$(seq 2015 2024)
-
-                download_year() {
-                  local year=$1
-                  echo "Downloading year $year..."
-                  mkdir -p "inputs/$year"
-                  
-                  # Only download days that don't exist yet
-                  seq 1 25 | parallel -j 8 \
-                    "if [ ! -f inputs/$year/{} ]; then \
-                      curl -s 'https://adventofcode.com/$year/day/{}/input' \
-                      -H 'Cookie: session=$AOC_SESSION' \
-                      -o 'inputs/$year/{}' || \
-                      echo 'Failed to download year $year day {}'; \
-                    fi"
-                }
-
-                export -f download_year
-                echo "$YEARS" | parallel -j 4 download_year
-              '';
-            };
-            download-year = pkgs.writeShellApplication {
-              name = "download-year";
-
-              runtimeInputs = with pkgs; [
-                curl
-                parallel
-              ];
-
-              text = ''
-                if [ -z "''${YEAR:-}" ]; then
-                  echo "Error: YEAR must be set"
-                  exit 1
-                fi
-
-                mkdir -p "''${YEAR}"
-                seq 1 25 | parallel -j 8 \
-                  "curl 'https://adventofcode.com/''${YEAR}/day/{}/input' \
-                  -H 'Cookie: session=''${AOC_SESSION}' \
-                  -o 'inputs/''${YEAR}/{}'"
-              '';
-            };
-            download-day = pkgs.writeShellApplication {
-              name = "download-day";
-
-              runtimeInputs = with pkgs; [
-                curl
-              ];
-
-              text = ''
-                if [ -z "''${YEAR:-}" ]; then
-                  echo "Error: YEAR must be set"
-                  exit 1
-                fi
-
-                if [ -z "''${DAY:-}" ]; then
-                  echo "Error: DAY must be set"
-                  exit 1
-                fi
-
-                curl "https://adventofcode.com/''${YEAR}/day/''${DAY}/input" \
-                  -H "Cookie: session=''${AOC_SESSION}" \
-                  -o "inputs/''${YEAR}/''${DAY}" \
-                  --create-dirs
-              '';
-            };
-          };
           apps =
             let
               basedir = ./year;
@@ -187,16 +108,26 @@
                 let
                   script = basedir + "/${name}";
 
-                  # Patch script shebang
-                  program = pkgs.runCommand name { buildInputs = [ venv ]; } ''
+                  baseProgram = pkgs.runCommand name { buildInputs = [ venv ]; } ''
                     cp ${script} $out
                     chmod +x $out
                     patchShebangs $out
                   '';
+
+                  wrappedProgram = pkgs.writeShellApplication {
+                    inherit name;
+                    runtimeInputs = [ baseProgram ];
+                    text = ''
+                      mkdir -p inputs
+                      ln -s ${aoc-inputs}/inputs/* inputs/
+                      ${baseProgram}
+                      rm -rf inputs
+                    '';
+                  };
                 in
                 {
                   type = "app";
-                  program = "${program}";
+                  program = "${wrappedProgram}/bin/${name}";
                   meta = {
                     description = "Solution for ${lib.removeSuffix ".py" name}";
                     license = lib.licenses.mit;
@@ -229,6 +160,10 @@
                 };
               shellHook = ''
                 unset PYTHONPATH
+                # Link inputs from flake input if not exists
+                if [ ! -d inputs ]; then
+                  ln -s ${aoc-inputs}/inputs inputs
+                fi
               '';
             };
 
@@ -273,6 +208,10 @@
                 };
 
                 shellHook = ''
+                  if [ ! -d inputs ]; then
+                    ln -s ${aoc-inputs}/inputs inputs
+                  fi
+
                   # Undo dependency propagation by nixpkgs.
                   unset PYTHONPATH
 
