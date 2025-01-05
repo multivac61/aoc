@@ -87,6 +87,14 @@
             programs.mdformat.enable = true;
             programs.toml-sort.enable = true;
           };
+          checks = lib.mapAttrs' (
+            name: package:
+            lib.nameValuePair name (
+              pkgs.runCommand "check-${name}" { } ''
+                ${lib.getExe package} > $out
+              ''
+            )
+          ) self'.packages;
           packages =
             let
               basedir = ./year;
