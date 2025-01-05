@@ -238,12 +238,12 @@ def supports_tls(ip):
     return is_abba(hypernet) and not is_abba(cybernet)
 
 
-def parse_year(line):
+def parse7(line):
     splits = re.split(r"\[(\w+)]", line)
     return "".join(splits[::2]), "".join(splits[1::2])
 
 
-in7 = parse(7, parse_year)
+in7 = parse(7, parse7)
 answer(7.1, 113, lambda: quantify(in7, supports_tls))
 answer(7.2, 258, lambda: quantify(in7, supports_ssl))
 
