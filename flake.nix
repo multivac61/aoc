@@ -115,11 +115,10 @@
                       inherit name;
                       runtimeInputs = [ baseProgram ];
                       text = ''
-                        rm -rf inputs
-                        mkdir -p inputs
-                        ln -s ${aoc-inputs}/inputs/* inputs/
+                        if [ ! -d inputs ]; then
+                          ln -s ${aoc-inputs}/inputs inputs
+                        fi
                         ${baseProgram}
-                        rm -rf inputs
                       '';
                     }
                   )
