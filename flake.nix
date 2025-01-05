@@ -84,7 +84,6 @@
             programs.ruff-check.enable = true;
             programs.ruff-format.enable = true;
             programs.nixfmt.enable = true;
-            programs.shellcheck.enable = true;
             programs.mdformat.enable = true;
             programs.toml-sort.enable = true;
           };
