@@ -87,7 +87,7 @@
             programs.mdformat.enable = true;
             programs.toml-sort.enable = true;
           };
-          apps =
+          packages =
             let
               basedir = ./year;
 
@@ -95,45 +95,37 @@
               files = filterAttrs (name: type: type == "regular" && hasSuffix ".py" name) (
                 builtins.readDir basedir
               );
-
+              solutions =
+                # Map over files to:
+                # - Rewrite script shebangs as shebangs pointing to the virtualenv
+                # - Strip .py suffixes from attribute names
+                #   Making a script "greet.py" runnable as "nix run .#greet"
+                lib.mapAttrs' (
+                  name: _:
+                  lib.nameValuePair (lib.removeSuffix ".py" name) (
+                    let
+                      script = basedir + "/${name}";
+                      baseProgram = pkgs.runCommand name { buildInputs = [ venv ]; } ''
+                        cp ${script} $out
+                        chmod +x $out
+                        patchShebangs $out
+                      '';
+                    in
+                    pkgs.writeShellApplication {
+                      inherit name;
+                      runtimeInputs = [ baseProgram ];
+                      text = ''
+                        rm -rf inputs
+                        mkdir -p inputs
+                        ln -s ${aoc-inputs}/inputs/* inputs/
+                        ${baseProgram}
+                        rm -rf inputs
+                      '';
+                    }
+                  )
+                ) files;
             in
-            # Map over files to:
-            # - Rewrite script shebangs as shebangs pointing to the virtualenv
-            # - Strip .py suffixes from attribute names
-            #   Making a script "greet.py" runnable as "nix run .#greet"
-            lib.mapAttrs' (
-              name: _:
-              lib.nameValuePair (lib.removeSuffix ".py" name) (
-                let
-                  script = basedir + "/${name}";
-
-                  baseProgram = pkgs.runCommand name { buildInputs = [ venv ]; } ''
-                    cp ${script} $out
-                    chmod +x $out
-                    patchShebangs $out
-                  '';
-
-                  wrappedProgram = pkgs.writeShellApplication {
-                    inherit name;
-                    runtimeInputs = [ baseProgram ];
-                    text = ''
-                      mkdir -p inputs
-                      ln -s ${aoc-inputs}/inputs/* inputs/
-                      ${baseProgram}
-                      rm -rf inputs
-                    '';
-                  };
-                in
-                {
-                  type = "app";
-                  program = "${wrappedProgram}/bin/${name}";
-                  meta = {
-                    description = "Solution for ${lib.removeSuffix ".py" name}";
-                    license = lib.licenses.mit;
-                  };
-                }
-              )
-            ) files;
+            solutions;
           # This example provides two different modes of development:
           # - Impurely using uv to manage virtual environments
           # - Pure development using uv2nix to manage virtual environments
