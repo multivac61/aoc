@@ -152,7 +152,7 @@ class answer:
         )
 
 
-def summary(answers):
+def summary():
     """Print a report that summarizes the answers."""
     for d in sorted(answers):
         print(answers[d])

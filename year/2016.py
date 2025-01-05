@@ -5,7 +5,7 @@ import re
 from hashlib import md5
 from itertools import count
 
-from aoc import answer, atoms, ints, mapt, parse_year, quantify, the, flatten
+from aoc import answer, atoms, ints, mapt, parse_year, quantify, the, flatten, summary
 
 parse = parse_year(2016)
 
@@ -290,3 +290,4 @@ answer(8.1, 115, lambda: sum(flatten(simulate_screen(in8))))
 answer(8.2, "EFEYKFRFIJ", lambda: display_screen(simulate_screen(in8)))
 
 # %%
+summary()

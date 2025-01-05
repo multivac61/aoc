@@ -27,7 +27,6 @@ from aoc import (
     Zero,
     add,
     answer,
-    answers,
     arrow_direction,
     atoms,
     flatten,
@@ -872,4 +871,4 @@ def find_code(val, row, col):
 answer(25.1, 9_132_360, lambda: find_code(20_151_125, target_row, target_col))
 
 # %%
-summary(answers)
+summary()
