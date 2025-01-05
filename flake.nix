@@ -143,6 +143,7 @@
               packages = [
                 python
                 pkgs.uv
+                pkgs.python313Packages.watchfiles
               ];
               env =
                 {
