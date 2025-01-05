@@ -4,3 +4,5 @@ result
 .venv
 *egg-info
 .python-version
+20*/
+.envrc
