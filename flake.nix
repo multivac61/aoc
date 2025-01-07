@@ -86,6 +86,7 @@
             programs.nixfmt.enable = true;
             programs.mdformat.enable = true;
             programs.toml-sort.enable = true;
+            programs.yamlfmt.enable = true;
           };
           checks = lib.mapAttrs' (
             name: package:
