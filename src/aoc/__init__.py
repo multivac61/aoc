@@ -76,7 +76,7 @@ Atom = Union[str, float, int]  # The type of a string or number
 Ints = Sequence[int]
 
 
-def ints(text: str) -> Tuple[int]:
+def ints(text: str) -> Tuple[int, ...]:
     """A tuple of all the integers in text, ignoring non-number characters."""
     return mapt(int, re.findall(r"-?[0-9]+", text))
 
