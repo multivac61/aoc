@@ -42,7 +42,7 @@ from aoc import (
 
 parse = parse_year(2015)
 
-# %%
+# %% Day 1
 in1 = the(parse(1))
 floors = mapt(lambda x: -1 if x == ")" else +1, in1)
 answer(1.1, 232, lambda: sum(floors))
@@ -54,7 +54,7 @@ def find_floor(floors):
 
 answer(1.2, 1783, lambda: find_floor(floors))
 
-# %%
+# %% Day 2
 in2 = parse(2, ints)
 
 
@@ -78,8 +78,7 @@ assert wrapping_paper2(1, 1, 10) == 14
 answer(2.2, 3842356, lambda: sum(starmap(wrapping_paper2, in2)))
 
 
-# %%
-
+# %% Day 3
 in3 = mapt(arrow_direction.get, the(parse(3)))
 
 
@@ -94,7 +93,7 @@ assert len(santa((North, South) * 8)) == 2
 answer(3.1, 2572, lambda: len(santa(in3)))
 answer(3.2, 2631, lambda: len(santa(in3[::2]) | santa(in3[1::2])))
 
-# %%
+# %% Day 4
 in4 = the(parse(4))
 
 
@@ -113,7 +112,7 @@ answer(4.1, 282749, lambda: find_hash_with_zeros(in4, 5))
 
 answer(4.2, 9962624, lambda: find_hash_with_zeros(in4, 6))
 
-# %%
+# %% Day 5
 in5 = parse(5)
 
 
@@ -137,9 +136,7 @@ def is_nice2(string):
 answer(5.2, 51, lambda: quantify(in5, is_nice2))
 
 
-# %%
-
-
+# %% Day 6
 def parse_lights(line):
     return tuple(elem for elem in atoms(line) if elem not in ("turn", "through"))
 
@@ -171,9 +168,8 @@ fuel_needed2 = {
 
 answer(6.2, 14_110_788, lambda: execute6(in6, fuel_needed2))
 
-# %%
 
-
+# %% Day 7
 def parse_instruction(line):
     tokens = atoms(line)
     return tokens[-1], tokens[:-1]
@@ -211,16 +207,15 @@ get_value.cache_clear()
 answer(7.2, 2797, lambda: get_value("a"))
 
 
-# %%
+# %% Day 8
 in8 = parse(8)
 
 answer(8.1, 1333, lambda: sum(len(line) - len(eval(line)) for line in in8))
 
 answer(8.2, 2046, lambda: sum(line.count('"') + line.count("\\") + 2 for line in in8))
 
-# %%
 
-
+# %% Day 9
 def parse_path(line):
     city1, _, city2, distance = atoms(line)
     return city1, city2, distance
@@ -256,7 +251,7 @@ answer(9.1, 207, lambda: min(all_paths(in9)))
 answer(9.2, 804, lambda: max(all_paths(in9)))
 
 
-# %%
+# %% Day 10
 in10 = str(the(parse(10)))
 
 
@@ -268,7 +263,7 @@ answer(10.1, 252_594, lambda: len(n_times(repeat_and_say, in10, 40)))
 answer(10.2, 3_579_328, lambda: len(n_times(repeat_and_say, in10, 50)))
 
 
-# %%
+# %% Day 11
 in11 = str(the(parse(11)))
 
 
@@ -302,7 +297,7 @@ answer(11.1, "vzbxxyzz", lambda: next_valid(in11))
 
 answer(11.2, "vzcaabcc", lambda: n_times(next_valid, in11, 2))
 
-# %%
+# %% Day 12
 in12 = json.loads(str(the(parse(12))))
 
 
@@ -334,7 +329,7 @@ def sum_numbers2(obj):
 answer(12.2, 96_852, lambda: sum_numbers2(in12))
 
 
-# %%
+# %% Day 13
 def parse_happiness(line):
     match = re.match(
         r"(\w+) would (gain|lose) (\d+) happiness units by sitting next to (\w+)\.",
@@ -367,9 +362,8 @@ for person in list(in13):
 
 answer(13.2, 640, lambda: max(happiness(order) for order in permutations(in13.keys())))
 
-# %%
 
-
+# %% Day 14
 def parse_reindeer(line):
     match = re.match(r"(\w+) can fly (\d+) km/s for (\d+) (.*) (\d+) seconds.", line)
     if not match:
@@ -413,9 +407,8 @@ answer(14.1, 2655, lambda: max(reindeer["distance"] for reindeer in reindeers.va
 
 answer(14.2, 1059, lambda: max(reindeer["score"] for reindeer in reindeers.values()))
 
-# %%
 
-
+# %% Day 15
 def parse_ingredients(line):
     name, _, c, _, d, _, f, _, t, _, cal = atoms(line)
     return name, {
@@ -454,9 +447,7 @@ answer(15.1, 13_882_464, lambda: cookie(in15))
 answer(15.2, 11_171_160, lambda: cookie(in15, max_calories=500))
 
 
-# %%
-
-
+# %% Day 16
 def parse_sue(line):
     _, sue, t1, n1, t2, n2, t3, n3 = atoms(line)
     return sue, {t1: n1, t2: n2, t3: n3}
@@ -498,10 +489,8 @@ def find_sue(sues, part2=False):
 answer(16.1, 103, lambda: find_sue(in16))
 answer(16.2, 405, lambda: find_sue(in16, part2=True))
 
-# %%
-in17 = parse(17, int)
 
-
+# %% Day 17
 def combinations_of(containers, total=150):
     return (
         y
@@ -511,21 +500,14 @@ def combinations_of(containers, total=150):
     )
 
 
+in17 = parse(17, int)
 answer(17.1, 654, lambda: quantify(combinations_of(in17), bool))
 
 min_len = min(map(len, combinations_of(in17)))
 answer(17.2, 57, lambda: quantify(combinations_of(in17), lambda c: min_len == len(c)))
 
 
-# %%
-
-
-with open("inputs/2015/18") as f:
-    in18 = {
-        (x, y) for y, line in enumerate(f) for x, char in enumerate(line) if char == "#"
-    }
-
-
+# %% Day 18
 def count_neighbors(lights, x, y):
     return sum(
         (nx, ny) in lights
@@ -553,14 +535,17 @@ def run_lights(lights, corners, steps=100):
     return current
 
 
+with open("inputs/2015/18") as f:
+    in18 = {
+        (x, y) for y, line in enumerate(f) for x, char in enumerate(line) if char == "#"
+    }
 answer(18.1, 821, lambda: len(run_lights(in18, corners=set())))
 
 corners = {(0, 0), (0, 99), (99, 0), (99, 99)}
 answer(18.2, 886, lambda: len(run_lights(in18, corners=corners)))
 
-# %%
 
-
+# %% Day 19
 def parse_rule(line):
     match = re.match(r"(\w+) => (\w+)", line)
     if not match:
@@ -603,11 +588,8 @@ def count_steps(molecule):
 
 answer(19.2, 207, lambda: count_steps(molecule))
 
-# %%
 
-in20 = the(parse(20, int))
-
-
+# %% Day 20
 def lowest_house_number(target):
     # We can divide target by 10 since each house gets 10 * sum of factors
     target = target // 10
@@ -637,12 +619,12 @@ def lowest_house_number2(target):
     return 0
 
 
+in20 = the(parse(20, int))
 answer(20.1, 665_280, lambda: lowest_house_number(in20))
 answer(20.2, 705_600, lambda: lowest_house_number2(in20))
 
-# %%
 
-
+# %% Day 21
 def parse_specs(line):
     match = re.match(r"(.*): (\d+)", line)
     if not match:
@@ -696,9 +678,8 @@ loadouts = list(get_loadouts())
 answer(21.1, 121, lambda: min(p["Cost"] for p in loadouts if player_wins(p, in21)))
 answer(21.2, 201, lambda: max(p["Cost"] for p in loadouts if not player_wins(p, in21)))
 
-# %%
 
-
+# %% Day 22
 @dataclass(frozen=True)
 class Spell:
     name: str
@@ -746,9 +727,7 @@ def simulate(boss_hp, boss_damage, player_hp=50, player_mana=500, hard_mode=Fals
                 return float("inf")
 
         # Apply effects
-        effects, boss_hp, player_mana, armor = apply_effects(
-            effects, boss_hp, player_mana
-        )
+        effects, boss_hp, player_mana, _ = apply_effects(effects, boss_hp, player_mana)
         if boss_hp <= 0:
             return mana_spent
 
@@ -801,10 +780,8 @@ boss = in22 = dict(parse(22, parse_specs))
 answer(22.1, 1824, lambda: simulate(boss["Hit Points"], boss["Damage"]))
 answer(22.2, 1937, lambda: simulate(boss["Hit Points"], boss["Damage"], hard_mode=True))
 
-# %%
-in23 = parse(23, atoms)
 
-
+# %% Day 23
 def execute(program, a=0):
     reg = {"a": a, "b": 0}
     ip = 0
@@ -831,13 +808,12 @@ def execute(program, a=0):
     return reg["b"]
 
 
+in23 = parse(23, atoms)
 answer(23.1, 255, lambda: execute(in23))
 answer(23.2, 334, lambda: execute(in23, a=1))
 
-# %%
-in24 = set(parse(24, int))
 
-
+# %% Day 24
 def find_smallest_qe(numbers, groups):
     target = sum(numbers) // groups
 
@@ -851,13 +827,12 @@ def find_smallest_qe(numbers, groups):
             return min(valid)
 
 
+in24 = set(parse(24, int))
 answer(24.1, 11_266_889_531, lambda: find_smallest_qe(in24, 3))
 answer(24.2, 77_387_711, lambda: find_smallest_qe(in24, 4))
 
-# %%
-target_row, target_col = in25 = parse(25, ints)[0]
 
-
+# %% Day 25
 def find_code(val, row, col):
     row = col = 1
     while target_row != row or target_col != col:
@@ -868,7 +843,8 @@ def find_code(val, row, col):
     return val
 
 
+target_row, target_col = in25 = parse(25, ints)[0]
 answer(25.1, 9_132_360, lambda: find_code(20_151_125, target_row, target_col))
 
-# %%
+# %% Summary
 summary()
