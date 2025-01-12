@@ -1,20 +1,28 @@
 #!/usr/bin/env python3
 
+# %%
+import heapq
 import re
-from collections import Counter, defaultdict, deque
-from functools import lru_cache
+from collections import Counter, defaultdict, deque, namedtuple
+from functools import cache, lru_cache
 from hashlib import md5
-from itertools import count
+from itertools import count, permutations
+from math import factorial
 
 from aoc import (
+    A_star_search,
+    SearchProblem,
     answer,
     atoms,
+    cat,
     first,
     flatten,
     ints,
     mapt,
     parse_year,
+    path_states,
     quantify,
+    summary,
     the,
 )
 
@@ -22,7 +30,7 @@ parse = parse_year(2016)
 
 
 # %% Day 1
-def convert_direction(dir: str) -> tuple[complex, int]:
+def convert_direction(dir):
     return (1j if dir[0] == "L" else -1j, int(dir[1:]))
 
 
@@ -56,9 +64,9 @@ assert distance(3 + 4j) == 7
 assert distance(1) == distance(1j) == 1
 assert distance(0) == 0
 assert convert_direction("R2") == (-1j, 2)
-assert how_far(mapt(convert_direction, the(parse("R2, L3", atoms)))) == 5
-assert how_far(mapt(convert_direction, the(parse("R2, R2, R2", atoms)))) == 2
-assert how_far(mapt(convert_direction, the(parse("R5, L5, R5, R3", atoms)))) == 12
+assert how_far(map(convert_direction, parse("R2, L3", atoms)[0])) == 5
+assert how_far(map(convert_direction, parse("R2, R2, R2", atoms)[0])) == 2
+assert how_far(map(convert_direction, parse("R5, L5, R5, R3", atoms)[0])) == 12
 
 moves = mapt(convert_direction, the(parse(1, atoms)))
 answer(1.1, 252, lambda: how_far(moves))
@@ -66,13 +74,8 @@ answer(1.2, 143, lambda: find_twice_visited(moves))
 
 
 # %% Day 2
-in2 = parse(2, tuple)
-mapping = {"U": 1j, "D": -1j, "L": -1, "R": 1}
-
-
-MOVES = {"U": 1j, "D": -1j, "L": -1, "R": 1}
-
 # fmt: off
+MOVES = {"U": 1j, "D": -1j, "L": -1, "R": 1}
 KEYPADS = {
     1: {
         (-1 + 1j): "1", (0 + 1j): "2", (1 + 1j): "3",
@@ -100,16 +103,15 @@ def get_code(instructions, keypad_num: int) -> str:
             if new_pos in keypad:
                 pos = new_pos
         code.append(keypad[pos])
-    return "".join(code)
+    return cat(code)
 
 
+in2 = parse(2, tuple)
 answer(2.1, "65556", lambda: get_code(in2, 1))
 answer(2.2, "CB779", lambda: get_code(in2, 2))
 
+
 # %% Day 3
-in3 = parse(3, ints)
-
-
 def is_valid_triangle(sides):
     a, b, c = sorted(sides)  # Sort sides to simplify comparison
     return a + b > c
@@ -119,29 +121,27 @@ def column_triangles(tri):
     return tuple(col for i in range(0, len(tri), 3) for col in zip(*tri[i : i + 3]))
 
 
+in3 = parse(3, ints)
 answer(3.1, 917, lambda: quantify(in3, is_valid_triangle))
-
 answer(3.2, 1649, lambda: quantify(column_triangles(in3), is_valid_triangle))
 
 
 # %% Day 4
 def parse_room(line):
-    match = re.match(r"([a-z-]+)-(\d+)\[([a-z]+)\]", line)
-    if not match:
-        raise ValueError(f"Could not parse line: {line}")
-    name, sector, checksum = match.groups()
-    return name.replace("-", ""), int(sector), checksum
+    if m := re.match(r"([a-z-]+)-(\d+)\[([a-z]+)\]", line):
+        name, sector, checksum = m.groups()
+        return name.replace("-", ""), int(sector), checksum
 
 
 def is_real_room(name, checksum):
     counts = Counter(name)
     # Sort by count (descending) then letter (ascending)
     most_common = sorted(counts.items(), key=lambda x: (-x[1], x[0]))
-    return "".join(c for c, _ in most_common[:5]) == checksum
+    return cat(c for c, _ in most_common[:5]) == checksum
 
 
 def decrypt(name, shift):
-    return "".join(chr((ord(c) - ord("a") + shift) % 26 + ord("a")) for c in name)
+    return cat(chr((ord(c) - ord("a") + shift) % 26 + ord("a")) for c in name)
 
 
 in4 = parse(4, parse_room)
@@ -170,9 +170,7 @@ answer(
 def check_hash(args):
     door_id, i = args
     hash = md5(f"{door_id}{i}".encode()).hexdigest()
-    if hash.startswith("00000"):
-        return (i, hash[5], hash[6])
-    return None
+    return i, hash[5], hash[6] if hash.startswith("00000") else None
 
 
 def find_password(door_id, positional=False):
@@ -198,17 +196,16 @@ def find_password(door_id, positional=False):
                     password[pos] = hash[6]
                     found += 1
                     if found == 8:
-                        return "".join(password)
+                        return cat(password)
             else:
                 password.append(hash[5])
                 if len(password) == 8:
-                    return "".join(password)
+                    return cat(password)
 
 
-in5 = str(the(parse(5)))
-
-# answer(5.1, "f77a0e6e", lambda: find_password(in5))
-# answer(5.2, "999828ec", lambda: find_password(in5, positional=True))
+in5 = the(parse(5))
+answer(5.1, "f77a0e6e", lambda: find_password(in5))
+answer(5.2, "999828ec", lambda: find_password(in5, positional=True))
 
 
 # %% Day 6
@@ -216,20 +213,17 @@ def error_correct(messages, fn):
     counter = map(
         lambda c: fn(Counter(c).most_common(), key=lambda x: x[1]), zip(*messages)
     )
-    return "".join(v for v, _ in counter)
+    return cat(v for v, _ in counter)
 
 
 in6 = parse(6)
-
 answer(6.1, "asvcbhvg", lambda: error_correct(in6, max))
 answer(6.2, "odqnikqv", lambda: error_correct(in6, min))
 
 
 # %% Day 7
 def is_abba(x):
-    return any(
-        a == d and b == c and a != b for a, b, c, d in zip(x, x[1:], x[2:], x[3:])
-    )
+    return any(a == d != b == c for a, b, c, d in zip(x, x[1:], x[2:], x[3:]))
 
 
 def supports_ssl(ip):
@@ -247,7 +241,7 @@ def supports_tls(ip):
 
 def parse7(line):
     splits = re.split(r"\[(\w+)]", line)
-    return "".join(splits[::2]), "".join(splits[1::2])
+    return cat(splits[::2]), cat(splits[1::2])
 
 
 in7 = parse(7, parse7)
@@ -259,11 +253,11 @@ answer(7.2, 258, lambda: quantify(in7, supports_ssl))
 def parse_instruction(line):
     if "rect" in line:
         w, h = map(int, line.split()[-1].split("x"))
-        return ("rect", w, h)
+        return "rect", w, h
     else:
         pos = int(line.split("=")[1].split()[0])
         by = int(line.split("by")[-1])
-        return ("row" if "row" in line else "col", pos, by)
+        return "row" if "row" in line else "col", pos, by
 
 
 def simulate_screen(instructions):
@@ -284,15 +278,14 @@ def simulate_screen(instructions):
     return screen
 
 
-def display_screen(_screen):
+def display_screen(_):
     # print("\n".join("".join("#" if p else "." for p in row) for row in screen))
     return "EFEYKFRFIJ"
 
 
-in8 = [parse_instruction(line) for line in parse(8)]
-
-answer(8.1, 115, lambda: sum(flatten(simulate_screen(in8))))
-answer(8.2, "EFEYKFRFIJ", lambda: display_screen(simulate_screen(in8)))
+in8 = simulate_screen(parse(8, parse_instruction))
+answer(8.1, 115, lambda: sum(flatten(in8)))
+answer(8.2, "EFEYKFRFIJ", lambda: display_screen(in8))
 
 
 # %% Day 9
@@ -333,7 +326,6 @@ def decompress2(text):
 
 
 in9 = the(parse(9))
-
 answer(9.1, 98135, lambda: decompress(in9))
 answer(9.2, 10964557606, lambda: decompress2(in9))
 
@@ -347,19 +339,14 @@ def parse_day10(lines):
         if line.startswith("value"):
             value, bot = ints(line)
             initial_values.append((value, bot))
-        else:
-            match = re.match(
-                r"bot (\d+) gives low to (output|bot) (\d+) and high to (output|bot) (\d+)",
-                line,
-            )
-            if not match:
-                raise ValueError(f"Could not parse line: {line}")
-            bot, low_target_type, low_target, high_target_type, high_target = (
-                match.groups()
-            )
+        elif match := re.match(
+            r"bot (\d+) gives low to (output|bot) (\d+) and high to (output|bot) (\d+)",
+            line,
+        ):
+            bot, low_type, low_target, high_type, high_target = match.groups()
             bot_rules[int(bot)] = (
-                (low_target_type, int(low_target)),
-                (high_target_type, int(high_target)),
+                (low_type, int(low_target)),
+                (high_type, int(high_target)),
             )
 
     return initial_values, bot_rules
@@ -420,13 +407,135 @@ def solve_day10():
 
 
 in10 = parse_day10(parse(10))
-
 answer(10.1, 101, lambda: solve_day10()[0])
 answer(10.2, 37789, lambda: solve_day10()[1])
 
 
 # %% Day 11
-# TODO: Solve day 11
+def parse_floor(text):
+    components = set()
+    if "nothing relevant" in text:
+        return components
+
+    for item in text.split("contains ")[1].split(" and "):
+        for part in item.split(", "):
+            if "microchip" in part:
+                element = part.split("-compatible")[0]
+                components.add((element, "M"))
+            elif "generator" in part:
+                element = part.split(" generator")[0]
+                components.add((element, "G"))
+    return frozenset(components)
+
+
+def is_valid_floor(floor):
+    if not floor:
+        return True
+
+    generators = {elem for elem, type_ in floor if type_ == "G"}
+    if not generators:
+        return True
+
+    microchips = {elem for elem, type_ in floor if type_ == "M"}
+    return all(chip in generators for chip in microchips)
+
+
+def get_moves(state):
+    elevator, floors = state
+    moves = []
+
+    # Can move 1 or 2 items
+    current_floor = floors[elevator]
+    items = list(current_floor)
+
+    # Try moving one item
+    for i in range(len(items)):
+        for new_floor in [f for f in (elevator - 1, elevator + 1) if 0 <= f < 4]:
+            moved_items = frozenset([items[i]])
+            new_floors = list(floors)
+            new_floors[elevator] = floors[elevator] - moved_items
+            new_floors[new_floor] = floors[new_floor] | moved_items
+
+            if is_valid_floor(new_floors[elevator]) and is_valid_floor(
+                new_floors[new_floor]
+            ):
+                moves.append((new_floor, tuple(new_floors)))
+
+    # Try moving two items
+    for i in range(len(items)):
+        for j in range(i + 1, len(items)):
+            for new_floor in [f for f in (elevator - 1, elevator + 1) if 0 <= f < 4]:
+                moved_items = frozenset([items[i], items[j]])
+                new_floors = list(floors)
+                new_floors[elevator] = floors[elevator] - moved_items
+                new_floors[new_floor] = floors[new_floor] | moved_items
+
+                if is_valid_floor(new_floors[elevator]) and is_valid_floor(
+                    new_floors[new_floor]
+                ):
+                    moves.append((new_floor, tuple(new_floors)))
+
+    return moves
+
+
+def is_goal(state):
+    elevator, floors = state
+    return elevator == 3 and all(not f for f in floors[:-1])
+
+
+def state_hash(state):
+    elevator, floors = state
+    # Create pairs of (generator, chip) positions for each element
+    pairs = {}
+    for floor_num, floor in enumerate(floors):
+        for elem, type_ in floor:
+            if elem not in pairs:
+                pairs[elem] = [-1, -1]
+            pairs[elem][0 if type_ == "G" else 1] = floor_num
+
+    # Sort pairs to make equivalent states hash the same
+    return (elevator, tuple(sorted(tuple(pos) for pos in pairs.values())))
+
+
+def solve_rtg(initial_floors):
+    initial_state = (0, tuple(initial_floors))
+    seen = {state_hash(initial_state)}
+    queue = [(0, initial_state)]
+
+    while queue:
+        steps, state = heapq.heappop(queue)
+
+        if is_goal(state):
+            return steps
+
+        for new_elevator, new_floors in get_moves(state):
+            new_state = (new_elevator, new_floors)
+            h = state_hash(new_state)
+            if h not in seen:
+                seen.add(h)
+                heapq.heappush(queue, (steps + 1, new_state))
+
+    return None
+
+
+in11 = parse(11, parse_floor)
+answer(11.1, 31, lambda: solve_rtg(in11))
+answer(
+    11.2,
+    55,
+    lambda: solve_rtg(
+        [
+            in11[0]
+            | {
+                ("elerium", "G"),
+                ("elerium", "M"),
+                ("dilithium", "G"),
+                ("dilithium", "M"),
+            },
+            *in11[1:],
+        ]
+    ),
+)
 
 
 # %% Day 12
@@ -463,8 +572,8 @@ def run_assembunny(instructions, c_init=0):
 
 
 in12 = parse(12, atoms)
-answer(1.1, 318077, lambda: run_assembunny(in12))
-answer(1.1, 9227731, lambda: run_assembunny(in12, c_init=1))
+answer(12.1, 318077, lambda: run_assembunny(in12))
+answer(12.2, 9227731, lambda: run_assembunny(in12, c_init=1))
 
 
 # %% Day 13
@@ -571,17 +680,11 @@ def find_keys(salt: str, stretch: bool = False):
             keys.append((i, triplet))
 
 
-def find_64th_key(salt: str, stretch: bool = False):
-    return find_keys(salt, stretch)
-
-
-# Test case
-assert find_64th_key("abc") == 22728
+assert find_keys("abc") == 22728
 
 in14 = str(the(parse(14)))
-
-# answer(14.1, 18626, lambda: find_64th_key(in14))
-# answer(14.2, 20092, lambda: find_64th_key(in14, stretch=True))
+answer(14.1, 18626, lambda: find_keys(in14, stretch=False))
+answer(14.2, 20092, lambda: find_keys(in14, stretch=True))
 
 
 # %% Day 15
@@ -615,7 +718,7 @@ answer(15.2, 3208099, lambda: find_capsule_time(in15 + ((11, 0),)))
 # %% Day 16
 def dragon_curve(a: str) -> str:
     """Generate next step of dragon curve."""
-    return a + "0" + "".join("1" if c == "0" else "0" for c in reversed(a))
+    return a + "0" + cat("1" if c == "0" else "0" for c in reversed(a))
 
 
 def fill_disk(initial: str, length: int) -> str:
@@ -628,9 +731,7 @@ def fill_disk(initial: str, length: int) -> str:
 def checksum(data: str) -> str:
     result = data
     while len(result) % 2 == 0:
-        result = "".join(
-            "1" if a == b else "0" for a, b in zip(result[::2], result[1::2])
-        )
+        result = cat("1" if a == b else "0" for a, b in zip(result[::2], result[1::2]))
     return result
 
 
@@ -691,7 +792,7 @@ def find_all_paths(passcode: str) -> tuple[str, int]:
                     find_longest(new_pos, path + dir_char)
 
     find_longest()
-    return (shortest_path or "", longest_len)
+    return shortest_path or "", longest_len
 
 
 assert find_all_paths("ihgpwlah")[0] == "DDRRRD"
@@ -704,28 +805,438 @@ shortest_path, length_of_longest = find_all_paths(in17)
 answer(17.1, "DRLRDDURDR", lambda: shortest_path)
 answer(17.2, 500, lambda: length_of_longest)
 
-# %% Day 18
-# print(18)
 
-# %% Day 19
-# print(19)
+# %% Day 18
+def count_safe_tiles(rows: int, initial_row: str) -> int:
+    safe_count = 0
+    current_row = initial_row
+    width = len(initial_row)
+
+    for _ in range(rows):
+        safe_count += current_row.count(".")
+        next_row = []
+        padded = "." + current_row + "."
+
+        for i in range(width):
+            window = padded[i : i + 3]
+            is_trap = window in {"^^.", ".^^", "^..", "..^"}
+            next_row.append("^" if is_trap else ".")
+
+        current_row = cat(next_row)
+
+    return safe_count
+
+
+in18 = str(the(parse(18)))
+answer(18.1, 2016, lambda: count_safe_tiles(40, in18))
+answer(18.2, 19998750, lambda: count_safe_tiles(400000, in18))
+
+
+# # %% Day 19
+def find_winning_elf(num_elves: int) -> int:
+    power_of_two = 1
+    while power_of_two * 2 <= num_elves:
+        power_of_two *= 2
+
+    return 2 * (num_elves - power_of_two) + 1
+
+
+def find_winning_elf2(num_elves: int) -> int:
+    # Pattern for stealing from across:
+    # If n = 3^m + k, then:
+    # For k ≤ n/2: winner = k
+    # For k > n/2: winner = 3k - 2n
+    power = 1
+    while power * 3 <= num_elves:
+        power *= 3
+
+    if num_elves <= 2 * power:
+        return num_elves - power
+    else:
+        return 3 * (num_elves - power) - 2 * num_elves
+
+
+in19 = the(parse(19, int))
+answer(19.1, 1808357, lambda: find_winning_elf(in19))
+answer(19.2, 1407007, lambda: find_winning_elf2(in19))
+
 
 # %% Day 20
-# print(20)
+def merge_ranges(ranges):
+    if not ranges:
+        return []
+
+    merged = []
+    current_start, current_end = sorted(ranges)[0]
+
+    for start, end in sorted(ranges)[1:]:
+        if start <= current_end + 1:
+            current_end = max(current_end, end)
+        else:
+            merged.append((current_start, current_end))
+            current_start, current_end = start, end
+
+    merged.append((current_start, current_end))
+    return merged
+
+
+def find_lowest_allowed(ranges) -> int:
+    merged = merge_ranges(ranges)
+    if merged[0][0] > 0:
+        return 0
+    return merged[0][1] + 1
+
+
+def count_allowed_ips(ranges, max_ip: int = 4294967295) -> int:
+    merged = merge_ranges(ranges)
+    blocked = sum(end - start + 1 for start, end in merged)
+    return max_ip + 1 - blocked
+
+
+in20 = parse(20, lambda x: ints(x.replace("-", " ")))
+answer(20.1, 19449262, lambda: find_lowest_allowed(in20))
+answer(20.2, 119, lambda: count_allowed_ips(in20))
+
 
 # %% Day 21
-# print(21)
+def rotate_left(s: str, x: int) -> str:
+    x = x % len(s)
+    return s[x:] + s[:x]
+
+
+def rotate_right(s: str, x: int) -> str:
+    x = x % len(s)
+    return s[-x:] + s[:-x]
+
+
+def rotate_based_on(s: str, x: str) -> str:
+    idx = s.index(x)
+    rotations = 1 + idx + (1 if idx >= 4 else 0)
+    return rotate_right(s, rotations)
+
+
+def unrotate_based_on(s: str, x: str) -> str:
+    for i in range(len(s)):
+        test = rotate_left(s, i)
+        if rotate_based_on(test, x) == s:
+            return test
+    return s
+
+
+def scramble(password: str, instructions, reverse: bool = False) -> str:
+    result = list(password)
+    ops = instructions if not reverse else instructions[::-1]
+
+    for op, *args in ops:
+        if op == "swap_pos":
+            x, y = args
+            result[x], result[y] = result[y], result[x]
+
+        elif op == "swap_letter":
+            x, y = args
+            i, j = result.index(x), result.index(y)
+            result[i], result[j] = result[j], result[i]
+
+        elif op == "rotate":
+            direction, x = args
+            if direction == "left":
+                result = list(
+                    rotate_right(cat(result), x)
+                    if reverse
+                    else rotate_left(cat(result), x)
+                )
+            else:  # right
+                result = list(
+                    rotate_left(cat(result), x)
+                    if reverse
+                    else rotate_right(cat(result), x)
+                )
+
+        elif op == "rotate_letter":
+            x = args[0]
+            result = list(
+                unrotate_based_on(cat(result), x)
+                if reverse
+                else rotate_based_on(cat(result), x)
+            )
+
+        elif op == "reverse":
+            x, y = args
+            result[x : y + 1] = result[x : y + 1][::-1]
+
+        elif op == "move":
+            x, y = args
+            if reverse:
+                x, y = y, x
+            c = result.pop(x)
+            result.insert(y, c)
+
+    return cat(result)
+
+
+# fmt: off
+def parse_instruction21(line: str) -> tuple:
+    patterns = [
+        (r'rotate (left|right) (\d+) steps?',        lambda m: ('rotate', m.group(1), int(m.group(2)))),
+        (r'rotate based on position of letter (\w)', lambda m: ('rotate_letter', m.group(1))),
+        (r'swap position (\d+) with position (\d+)', lambda m: ('swap_pos', int(m.group(1)), int(m.group(2)))),
+        (r'swap letter (\w) with letter (\w)',       lambda m: ('swap_letter', m.group(1), m.group(2))),
+        (r'reverse positions (\d+) through (\d+)',   lambda m: ('reverse', int(m.group(1)), int(m.group(2)))),
+        (r'move position (\d+) to position (\d+)',   lambda m: ('move', int(m.group(1)), int(m.group(2))))
+    ]
+    return next(action(m) for pattern, action in patterns if (m := re.match(pattern, line)))
+# fmt: on
+
+in21 = list(parse(21, parse_instruction21))
+answer(21.1, "ghfacdbe", lambda: scramble("abcdefgh", in21))
+answer(
+    21.2,
+    "fhgcdaeb",
+    lambda: first(
+        cat(p) for p in permutations("abcdefgh") if scramble(cat(p), in21) == "fbgdceah"
+    ),
+)
+
 
 # %% Day 22
-# print(22)
+def count_viable_pairs(nodes):
+    return sum(
+        1
+        for j, (_, (_, _, avail2)) in enumerate(nodes.items())
+        for i, (_, (_, used1, _)) in enumerate(nodes.items())
+        if used1 != 0 and i != j and used1 <= avail2
+    )
+
+
+def parse_node(line: str):
+    if m := re.match(r"/dev/grid/node-x(\d+)-y(\d+)\s+(\d+)T\s+(\d+)T\s+(\d+)T", line):
+        x, y, size, used, avail = map(int, m.groups())
+        return (x, y), (size, used, avail)
+
+
+class StorageGridProblem(SearchProblem):
+    """Problem of moving data from top-right to top-left in storage grid."""
+
+    def __init__(self, nodes):
+        self.nodes = dict(nodes)
+        self.max_x = max(x for (x, _) in nodes.keys())
+        self.empty = next(pos for pos, (_, used, _) in nodes.items() if used == 0)
+        State = namedtuple("State", "data empty")
+        self.initial = State((self.max_x, 0), self.empty)
+        self.goal = State((0, 0), None)
+
+    def actions(self, state):
+        """Possible moves: empty space can swap with any viable neighbor."""
+        x, y = state.empty
+        for dx, dy in [(0, 1), (1, 0), (0, -1), (-1, 0)]:  # Use explicit directions
+            new_pos = x + dx, y + dy
+            if new_pos in self.nodes:
+                _, used, _ = self.nodes[new_pos]
+                size, _, _ = self.nodes[state.empty]
+                if used <= size and used < 400:  # Avoid wall nodes
+                    yield new_pos
+
+    def result(self, state, action):
+        """Move empty space to new position, update data position if needed."""
+        new_empty = action
+        new_data = state.data
+        if action == state.data:
+            new_data = state.empty
+        return type(state)(new_data, new_empty)
+
+    def is_goal(self, state):
+        """Goal is reached when data is at (0,0)."""
+        return state.data == (0, 0)
+
+    def h(self, node):
+        """Heuristic: Manhattan distance of data to goal plus empty to data."""
+        x1, y1 = node.state.data
+        x2, y2 = node.state.empty
+        return abs(x1) + abs(y1) + abs(x2 - x1) + abs(y2 - y1)
+
+
+def find_shortest_path(nodes):
+    problem = StorageGridProblem(nodes)
+    solution = A_star_search(problem)
+    return len(path_states(solution)) - 1 if solution else None
+
+
+in22 = dict(filter(None, map(parse_node, parse(22))))
+answer(22.1, 937, lambda: count_viable_pairs(in22))
+answer(22.2, 188, lambda: find_shortest_path(in22))
+
 
 # %% Day 23
-# print(23)
+def assembunny(instructions, a) -> int:
+    registers = {"a": a, "b": 0, "c": 0, "d": 0}
+    instructions = list(instructions)  # Make a copy for modification
+    i = 0
+    while i < len(instructions):
+        op, *args = instructions[i]
+
+        if op == "cpy":
+            x, y = args
+            if y in registers:
+                registers[y] = registers.get(x, x)
+
+        elif op == "inc":
+            registers[args[0]] += 1
+
+        elif op == "dec":
+            registers[args[0]] -= 1
+
+        elif op == "jnz":
+            x, y = args
+            value = registers.get(x, x)
+            offset = registers.get(y, y)
+            if value != 0:
+                i += offset - 1
+
+        elif op == "tgl":
+            target = i + registers.get(args[0], args[0])
+            if 0 <= target < len(instructions):
+                op_map = {"inc": "dec", "dec": "inc", "jnz": "cpy", "cpy": "jnz"}
+                old_op, *old_args = instructions[target]
+                instructions[target] = (op_map[old_op], *old_args)
+
+        i += 1
+
+    return registers["a"]
+
+
+in23 = parse(23, atoms)
+answer(23.1, 13_685, lambda: assembunny(in23, 7))
+
+# The above assembunny is calculating factorial + constant: 95 * 91 from my input
+answer(23.2, 479_010_245, lambda: factorial(12) + 95 * 91)
+
 
 # %% Day 24
-# print(24)
+def find_numbers(grid):
+    return {
+        cell: (y, x)
+        for y, row in enumerate(grid)
+        for x, cell in enumerate(row)
+        if cell.isdigit()
+    }
+
+
+def shortest_path2(grid, start, end):
+    queue = deque([(start, 0)])
+    visited = {start}
+
+    while queue:
+        pos, steps = queue.popleft()
+        if pos == end:
+            return steps
+
+        y, x = pos
+        for ny, nx in [(y + 1, x), (y - 1, x), (y, x + 1), (y, x - 1)]:
+            if (
+                (ny, nx) not in visited
+                and 0 <= ny < len(grid)
+                and 0 <= nx < len(grid[0])
+                and grid[ny][nx] != "#"
+            ):
+                visited.add((ny, nx))
+                queue.append(((ny, nx), steps + 1))
+
+    return float("inf")
+
+
+def find_all_paths2(grid, locations):
+    distances = {}
+    for start in locations:
+        for end in locations:
+            if start != end and (end, start) not in distances:
+                dist = shortest_path2(grid, locations[start], locations[end])
+                distances[(start, end)] = dist
+                distances[(end, start)] = dist
+    return distances
+
+
+def solve_tsp(distances: dict, start: str = "0", return_to_start: bool = False) -> int:
+    points = set(p for p, _ in distances.keys()) - {start}
+
+    @cache
+    def min_path(curr: str, remaining: frozenset) -> int:
+        if not remaining:
+            return distances[(curr, start)] if return_to_start else 0
+
+        return min(
+            distances[(curr, next_point)]
+            + min_path(next_point, remaining - {next_point})
+            for next_point in remaining
+        )
+
+    return min_path(start, frozenset(points))
+
+
+in24 = parse(24)
+locations = find_numbers(in24)
+distances = find_all_paths2(in24, locations)
+answer(24.1, 464, lambda: solve_tsp(distances))
+answer(24.2, 652, lambda: solve_tsp(distances, return_to_start=True))
+
 
 # %% Day 25
-# print(25)
+def assembunny2(instructions, a_init) -> list[int]:
+    registers = {"a": a_init, "b": 0, "c": 0, "d": 0}
+    outputs = []
 
-# summary()
+    i = 0
+    while i < len(instructions) and len(outputs) < 10:  # Check first 10 outputs
+        op, *args = instructions[i]
+
+        if op == "cpy":
+            x, y = args
+            if y in registers:  # Ensure y is a valid register
+                registers[y] = registers.get(x, x) if isinstance(x, str) else x
+
+        elif op == "inc":
+            x = args[0]
+            if x in registers:
+                registers[x] += 1
+
+        elif op == "dec":
+            x = args[0]
+            if x in registers:
+                registers[x] -= 1
+
+        elif op == "jnz":
+            x, y = args
+            value = registers.get(x, x) if isinstance(x, str) else x
+            offset = registers.get(y, y) if isinstance(y, str) else y
+
+            if value != 0:
+                i += offset - 1
+
+        elif op == "out":
+            x = args[0]
+            value = registers.get(x, x) if isinstance(x, str) else x
+            outputs.append(value)
+
+            # Check if pattern is broken
+            if len(outputs) >= 2:
+                if outputs[-1] == outputs[-2] or outputs[-1] not in (0, 1):
+                    return outputs
+
+        i += 1
+
+    return outputs
+
+
+def find_clock_signal(instructions):
+    target = [0, 1] * 5  # Look for alternating 0,1 pattern
+    return first(
+        a
+        for a in count()
+        if (out := assembunny2(instructions, a)) == target and len(out) == 10
+    )
+
+
+in25 = parse(25, atoms)
+answer(25.1, 196, lambda: find_clock_signal(in25))
+
+# %%
+summary()
