@@ -20,7 +20,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    overload,
 )
 
 lines = str.splitlines  # By default, split input text into lines
@@ -214,23 +213,13 @@ def cover(*integers) -> range:
     return range(min(nums), max(nums) + 1)
 
 
-@overload
-def the(sequence: Sequence[int]) -> int: ...
-
-
-@overload
-def the(sequence: Sequence[str]) -> str: ...
-
-
 def the(sequence):
     """Return the one item in a sequence. Raise error if not exactly one."""
-    if isinstance(sequence, (str, int)):
-        return sequence
-
-    items = tuple(sequence)
-    if len(items) != 1:
+    it = iter(sequence)
+    item = next(it, None)
+    if item is None or next(it, None) is not None:
         raise ValueError("Expected exactly one item in sequence")
-    return items[0]
+    return item
 
 
 def split_at(sequence, i) -> Tuple[Sequence, Sequence]:
@@ -626,7 +615,7 @@ class SearchProblem:
     def __str__(self):
         return "{}({!r}, {!r})".format(type(self).__name__, self.initial, self.goal)
 
-    def actions(self, _):
+    def actions(self, state):
         raise NotImplementedError
 
     def result(self, state, action):
@@ -788,6 +777,10 @@ def tests():
     assert minmax([3, 1, 4, 1, 5, 9]) == (1, 9)
     assert T([(1, 2, 3), (4, 5, 6)]) == [(1, 4), (2, 5), (3, 6)]
     assert the({1}) == 1
+    assert the(("a",)) == "a"
+    assert str(the(("a",))) == "a"
+    assert str(the((1,))) == "1"
+    assert the((1,)) == 1
     assert split_at("hello, world", 6) == ("hello,", " world")
     assert is_int(-42) and not is_int("one")
     assert sign(-42) == -1 and sign(0) == 0 and sign(42) == +1

@@ -251,7 +251,7 @@ def repeat_and_say(word: str) -> str:
     return cat(str(len(list(group))) + char for char, group in groupby(word))
 
 
-in10 = str(the(parse(10)))
+in10 = the(parse(10))
 answer(10.1, 252_594, lambda: len(n_times(repeat_and_say, in10, 40)))
 answer(10.2, 3_579_328, lambda: len(n_times(repeat_and_say, in10, 50)))
 
@@ -283,12 +283,12 @@ def next_valid(pw: str) -> str:
     return pw
 
 
-in11 = str(the(parse(11)))
+in11 = the(parse(11))
 answer(11.1, "vzbxxyzz", lambda: next_valid(in11))
 answer(11.2, "vzcaabcc", lambda: n_times(next_valid, in11, 2))
 
 # %% Day 12
-in12 = json.loads(str(the(parse(12))))
+in12 = json.loads(the(parse(12)))
 
 
 def sum_numbers(obj):

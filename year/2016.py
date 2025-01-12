@@ -682,7 +682,7 @@ def find_keys(salt: str, stretch: bool = False):
 
 assert find_keys("abc") == 22728
 
-in14 = str(the(parse(14)))
+in14 = the(parse(14))
 answer(14.1, 18626, lambda: find_keys(in14, stretch=False))
 answer(14.2, 20092, lambda: find_keys(in14, stretch=True))
 
@@ -744,7 +744,7 @@ test_filled = fill_disk("10000", 20)
 assert test_filled == "10000011110010000111"
 assert checksum(test_filled) == "01100"
 
-in16 = str(the(parse(16)))
+in16 = the(parse(16))
 answer(16.1, "10010110010011110", lambda: checksum(fill_disk(in16, 272)))
 answer(16.2, "01101011101100011", lambda: checksum(fill_disk(in16, 35651584)))
 
@@ -799,7 +799,7 @@ assert find_all_paths("ihgpwlah")[0] == "DDRRRD"
 assert find_all_paths("kglvqrro")[0] == "DDUDRLRRUDRD"
 assert find_all_paths("ulqzkmiv")[0] == "DRURDRUDDLLDLUURRDULRLDUUDDDRR"
 
-in17 = str(the(parse(17)))
+in17 = the(parse(17))
 shortest_path, length_of_longest = find_all_paths(in17)
 
 answer(17.1, "DRLRDDURDR", lambda: shortest_path)
@@ -827,7 +827,7 @@ def count_safe_tiles(rows: int, initial_row: str) -> int:
     return safe_count
 
 
-in18 = str(the(parse(18)))
+in18 = the(parse(18))
 answer(18.1, 2016, lambda: count_safe_tiles(40, in18))
 answer(18.2, 19998750, lambda: count_safe_tiles(400000, in18))
 
