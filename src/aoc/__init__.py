@@ -20,6 +20,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    overload,
 )
 
 lines = str.splitlines  # By default, split input text into lines
@@ -213,16 +214,23 @@ def cover(*integers) -> range:
     return range(min(nums), max(nums) + 1)
 
 
-def the(sequence) -> object:
+@overload
+def the(sequence: Sequence[int]) -> int: ...
+
+
+@overload
+def the(sequence: Sequence[str]) -> str: ...
+
+
+def the(sequence):
     """Return the one item in a sequence. Raise error if not exactly one."""
-    it = iter(sequence)
-    try:
-        item = next(it)
-        if next(it, None) is not None:
-            raise ValueError("Expected exactly one item in sequence")
-        return item
-    except StopIteration:
+    if isinstance(sequence, (str, int)):
+        return sequence
+
+    items = tuple(sequence)
+    if len(items) != 1:
         raise ValueError("Expected exactly one item in sequence")
+    return items[0]
 
 
 def split_at(sequence, i) -> Tuple[Sequence, Sequence]:
