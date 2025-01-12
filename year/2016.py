@@ -21,6 +21,7 @@ from aoc import (
     mapt,
     parse_year,
     path_states,
+    positive_ints,
     quantify,
     summary,
     the,
@@ -893,7 +894,7 @@ def count_allowed_ips(ranges, max_ip: int = 4294967295) -> int:
     return max_ip + 1 - blocked
 
 
-in20 = parse(20, lambda x: ints(x.replace("-", " ")))
+in20 = parse(20, positive_ints)
 answer(20.1, 19449262, lambda: find_lowest_allowed(in20))
 answer(20.2, 119, lambda: count_allowed_ips(in20))
 
