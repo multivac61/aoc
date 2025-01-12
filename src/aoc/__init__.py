@@ -318,7 +318,7 @@ def mapl(function: Callable, *sequences) -> list:
     return list(map(function, *sequences))
 
 
-def cat(things: Collection, sep="") -> str:
+def cat(things, sep="") -> str:
     """Concatenate the things."""
     return sep.join(map(str, things))
 
