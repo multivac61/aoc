@@ -63,7 +63,7 @@ def show_items(source, items, show: int, hr="─" * 100):
     if show:
         types = Counter(map(type, items))
         counts = ", ".join(
-            f'{n} {t.__name__}{"" if n == 1 else "s"}' for t, n in types.items()
+            f"{n} {t.__name__}{'' if n == 1 else 's'}" for t, n in types.items()
         )
         print(f"{hr}\n{source} ➜ {counts}:\n{hr}")
         for line in items[:show]:
