@@ -29,6 +29,8 @@ from aoc import (
     answer,
     arrow_direction,
     atoms,
+    cat,
+    first,
     flatten,
     ints,
     mapt,
@@ -54,10 +56,8 @@ def find_floor(floors):
 
 answer(1.2, 1783, lambda: find_floor(floors))
 
+
 # %% Day 2
-in2 = parse(2, ints)
-
-
 def wrapping_paper(l, w, h):  # noqa: E741
     return 2 * l * w + 2 * w * h + 2 * h * l + min(l * w, w * h, l * h)
 
@@ -65,6 +65,7 @@ def wrapping_paper(l, w, h):  # noqa: E741
 assert wrapping_paper(2, 3, 4) == 58
 assert wrapping_paper(1, 1, 10) == 43
 
+in2 = parse(2, ints)
 answer(2.1, 1606483, lambda: sum(starmap(wrapping_paper, in2)))
 
 
@@ -93,10 +94,8 @@ assert len(santa((North, South) * 8)) == 2
 answer(3.1, 2572, lambda: len(santa(in3)))
 answer(3.2, 2631, lambda: len(santa(in3[::2]) | santa(in3[1::2])))
 
+
 # %% Day 4
-in4 = the(parse(4))
-
-
 def find_hash_with_zeros(key, num_zeros):
     return next(
         i
@@ -108,8 +107,8 @@ def find_hash_with_zeros(key, num_zeros):
 assert find_hash_with_zeros("abcdef", 5) == 609043
 assert find_hash_with_zeros("pqrstuv", 5) == 1048970
 
+in4 = the(parse(4))
 answer(4.1, 282749, lambda: find_hash_with_zeros(in4, 5))
-
 answer(4.2, 9962624, lambda: find_hash_with_zeros(in4, 6))
 
 # %% Day 5
@@ -209,9 +208,7 @@ answer(7.2, 2797, lambda: get_value("a"))
 
 # %% Day 8
 in8 = parse(8)
-
 answer(8.1, 1333, lambda: sum(len(line) - len(eval(line)) for line in in8))
-
 answer(8.2, 2046, lambda: sum(line.count('"') + line.count("\\") + 2 for line in in8))
 
 
@@ -229,9 +226,6 @@ def build_distances(paths):
     return distances
 
 
-in9 = build_distances(parse(9, parse_path))
-
-
 def path_lengths(distances):
     cities = list(distances.keys())
     return (
@@ -247,26 +241,22 @@ def all_paths(distances):
     )
 
 
+in9 = build_distances(parse(9, parse_path))
 answer(9.1, 207, lambda: min(all_paths(in9)))
 answer(9.2, 804, lambda: max(all_paths(in9)))
 
 
 # %% Day 10
-in10 = str(the(parse(10)))
-
-
 def repeat_and_say(word: str) -> str:
-    return "".join(str(len(list(group))) + char for char, group in groupby(word))
+    return cat(str(len(list(group))) + char for char, group in groupby(word))
 
 
+in10 = str(the(parse(10)))
 answer(10.1, 252_594, lambda: len(n_times(repeat_and_say, in10, 40)))
 answer(10.2, 3_579_328, lambda: len(n_times(repeat_and_say, in10, 50)))
 
 
 # %% Day 11
-in11 = str(the(parse(11)))
-
-
 @lru_cache()
 def is_valid(password):
     num = mapt(ord, password)
@@ -293,8 +283,8 @@ def next_valid(pw: str) -> str:
     return pw
 
 
+in11 = str(the(parse(11)))
 answer(11.1, "vzbxxyzz", lambda: next_valid(in11))
-
 answer(11.2, "vzcaabcc", lambda: n_times(next_valid, in11, 2))
 
 # %% Day 12
@@ -483,7 +473,7 @@ def match_sue(presents, part2=False):
 
 
 def find_sue(sues, part2=False):
-    return the(sue for sue, presents in sues.items() if match_sue(presents, part2))
+    return first(sue for sue, presents in sues.items() if match_sue(presents, part2))
 
 
 answer(16.1, 103, lambda: find_sue(in16))
