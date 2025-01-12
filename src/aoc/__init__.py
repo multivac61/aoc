@@ -238,7 +238,7 @@ def split_at(sequence, i) -> Tuple[Sequence, Sequence]:
     return sequence[:i], sequence[i:]
 
 
-def ignore(*args) -> None:
+def ignore(*_) -> None:
     "Just return None."
     return None
 
@@ -626,7 +626,7 @@ class SearchProblem:
     def __str__(self):
         return "{}({!r}, {!r})".format(type(self).__name__, self.initial, self.goal)
 
-    def actions(self, state):
+    def actions(self, _):
         raise NotImplementedError
 
     def result(self, state, action):
