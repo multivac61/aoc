@@ -9,4 +9,14 @@ description = "My solutions to Advent of Code"
 readme = "README.md"
 authors = [{name = "multivac61", email = "olafur@genkiinstruments.com"}]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "urllib3>=2.2.3",
+]
+
+[project.scripts]
+aoc = "aoc:main"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.6.7",
+]

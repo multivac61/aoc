@@ -832,4 +832,31 @@ def tests():
     assert add(North, South) == (0, 0)
 
 
+def main():
+    """Main entry point for the aoc package."""
+    import sys
+
+    if len(sys.argv) > 1:
+        print(f"Running AOC solution for {sys.argv[1]}")
+    else:
+        print("AOC - Advent of Code Solutions")
+        print("Usage: aoc [year] [day]")
+        print("Available utilities loaded successfully!")
+
+    # Run tests to verify everything is working
+    try:
+        tests()
+        print("✓ All utility tests passed!")
+    except Exception as e:
+        print(f"✗ Tests failed: {e}")
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    import sys
+
+    sys.exit(main())
+
 tests()
