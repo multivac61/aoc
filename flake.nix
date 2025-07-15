@@ -130,18 +130,10 @@
             name = "submit-aoc";
             runtimeInputs = [ pkgs.curl ];
             text = ''
-              #!/usr/bin/env bash
-
-              # Usage: submit-aoc DAY PART ANSWER [YEAR]
-              # Example: submit-aoc 13 2 "67,42"
-              # Example: submit-aoc 13 2 "67,42" 2018
-
-              set -euo pipefail
-
               if [ $# -lt 3 ] || [ $# -gt 4 ]; then
-                  echo "Usage: $0 DAY PART ANSWER [YEAR]"
-                  echo "Example: $0 13 2 \"67,42\""
-                  echo "Example: $0 13 2 \"67,42\" 2018"
+                  echo "Usage: submit-aoc DAY PART ANSWER [YEAR]"
+                  echo "Example: submit-aoc 13 2 \"67,42\""
+                  echo "Example: submit-aoc 13 2 \"67,42\" 2018"
                   exit 1
               fi
 
@@ -277,6 +269,7 @@
             packages = [
               python
               pkgs.uv
+              self.packages.${system}.submit-aoc
             ];
             env = {
               UV_PYTHON_DOWNLOADS = "never";
