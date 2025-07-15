@@ -125,10 +125,80 @@
               }
             )
           ) files;
+
+          submit-aoc = pkgs.writeShellApplication {
+            name = "submit-aoc";
+            runtimeInputs = [ pkgs.curl ];
+            text = ''
+              #!/usr/bin/env bash
+
+              # Usage: submit-aoc DAY PART ANSWER [YEAR]
+              # Example: submit-aoc 13 2 "67,42"
+              # Example: submit-aoc 13 2 "67,42" 2018
+
+              set -euo pipefail
+
+              if [ $# -lt 3 ] || [ $# -gt 4 ]; then
+                  echo "Usage: $0 DAY PART ANSWER [YEAR]"
+                  echo "Example: $0 13 2 \"67,42\""
+                  echo "Example: $0 13 2 \"67,42\" 2018"
+                  exit 1
+              fi
+
+              DAY=$1
+              PART=$2
+              ANSWER=$3
+              YEAR=''${4:-2018}
+
+              # Check if session cookie is set
+              if [ -z "''${AOC_SESSION:-}" ]; then
+                  echo "Error: AOC_SESSION environment variable is not set"
+                  echo "Please set it in your .envrc.local file"
+                  exit 1
+              fi
+
+              echo "Submitting Day $DAY Part $PART with answer: $ANSWER (Year: $YEAR)"
+
+              # Submit the answer
+              response=$(curl -s -X POST \
+                -H "Cookie: session=$AOC_SESSION" \
+                -H "Content-Type: application/x-www-form-urlencoded" \
+                -d "level=$PART&answer=$ANSWER" \
+                "https://adventofcode.com/$YEAR/day/$DAY/answer")
+
+              # Parse response for key indicators
+              if echo "$response" | grep -q "That's the right answer"; then
+                  echo "✅ CORRECT! Answer accepted."
+                  if echo "$response" | grep -q "gold star"; then
+                      echo "🌟 You got a gold star!"
+                  fi
+              elif echo "$response" | grep -q "That's not the right answer"; then
+                  echo "❌ WRONG answer."
+                  if echo "$response" | grep -q "too high"; then
+                      echo "   Your answer is too high."
+                  elif echo "$response" | grep -q "too low"; then
+                      echo "   Your answer is too low."
+                  fi
+              elif echo "$response" | grep -q "You gave an answer too recently"; then
+                  echo "⏳ Rate limited. Please wait before submitting again."
+                  # Extract wait time if present
+                  if echo "$response" | grep -q "You have.*left to wait"; then
+                      wait_time=$(echo "$response" | grep -o "You have.*left to wait" | head -1)
+                      echo "   $wait_time"
+                  fi
+              elif echo "$response" | grep -q "already complete"; then
+                  echo "🏆 This puzzle is already completed!"
+              else
+                  echo "❓ Unknown response. Full response:"
+                  echo "$response"
+              fi
+            '';
+          };
         in
         yearPackages
         // {
           default = venv;
+          inherit submit-aoc;
         }
       );
 

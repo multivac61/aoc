@@ -6,6 +6,7 @@ result
 .python-version
 20*/
 .envrc
+.envrc.local
 inputs/
 inputs
 .DS_Store
