@@ -693,7 +693,7 @@ spells = (  # Tuple instead of list
 )
 
 
-def simulate(boss_hp, boss_damage, player_hp=50, player_mana=500, hard_mode=False):
+def simulate(boss_hp, player_hp=50, player_mana=500, hard_mode=False):
     best_cost = float("inf")
 
     def apply_effects(effects, hp, mana):
@@ -723,9 +723,7 @@ def simulate(boss_hp, boss_damage, player_hp=50, player_mana=500, hard_mode=Fals
             and mana_spent + spell.cost < best_cost
         )
 
-    def calculate_effects_and_costs(
-        player_hp, player_mana, boss_hp, effects, mana_spent, spell
-    ):
+    def calculate_effects_and_costs(player_hp, player_mana, boss_hp, effects, _, spell):
         new_mana = player_mana - spell.cost
         new_hp = player_hp
         new_boss_hp = boss_hp
@@ -781,8 +779,8 @@ def simulate(boss_hp, boss_damage, player_hp=50, player_mana=500, hard_mode=Fals
 
 boss = in22 = dict(parse(22, parse_specs))
 # Uncomment these lines to actually run the full computation (takes ~20 seconds)
-# answer(22.1, 1824, lambda: simulate(boss["Hit Points"], boss["Damage"]))
-# answer(22.2, 1937, lambda: simulate(boss["Hit Points"], boss["Damage"], hard_mode=True))
+# answer(22.1, 1824, lambda: simulate(boss["Hit Points"]))
+# answer(22.2, 1937, lambda: simulate(boss["Hit Points"], hard_mode=True))
 
 
 # %% Day 23
