@@ -17,6 +17,7 @@ from aoc import (
     add2,
     taxi_distance,
     directions4,
+    summary,
 )
 
 parse = parse_year(2017)
@@ -1226,3 +1227,6 @@ def turing_machine():
 
 # Uncomment (takes ~30 seconds)
 # answer(25.1, 2725, lambda: turing_machine())
+
+# %% Summary
+summary()
