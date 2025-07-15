@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aoc import answer, parse_year, first, combinations, prod
+from aoc import answer, parse_year, first, combinations, prod, summary
 import re
 
 parse = parse_year(2020)
@@ -58,3 +58,6 @@ assert validate_passwords2(*parse_password_line("2-9 c: ccccccccc")) is False
 answer(2.2, 308, lambda: sum(1 for data in in2 if validate_passwords2(*data)))
 
 # %%
+
+# %% Summary
+summary()

@@ -160,9 +160,12 @@ def summary():
     print(
         f"\nCorrect: {quantify((answers[d].ok for d in answers), bool)}/{len(answers)}"
     )
-    print(
-        f"\nTime in seconds: {median(times):.3f} median, {mean(times):.3f} mean, {sum(times):.3f} total."
-    )
+    if times:
+        print(
+            f"\nTime in seconds: {median(times):.3f} median, {mean(times):.3f} mean, {sum(times):.3f} total."
+        )
+    else:
+        print("\nNo timing data available.")
 
 
 class multimap(defaultdict):
@@ -616,36 +619,49 @@ class SearchProblem:
         return "{}({!r}, {!r})".format(type(self).__name__, self.initial, self.goal)
 
     def actions(self, state):
+        """Return the actions that can be executed in the given state."""
         raise NotImplementedError
 
     def result(self, state, action):
+        """Return the state that results from executing the given action in the given state."""
         return action  # Simplest case: action is result state
 
     def is_goal(self, state):
+        """Return True if the state is a goal state."""
         return state == self.goal
 
     def action_cost(self, s, a, s1):
+        """Return the cost of executing action a in state s to reach state s1."""
         return 1
 
-    def h(self, node):
-        return 0  # Never overestimate!
+    def h(self, node) -> float:
+        """Return the heuristic value of the given node."""
+        return 0.0  # Never overestimate!
 
 
 class GridProblem(SearchProblem):
     """Problem for searching a grid from a start to a goal location.
     A state is just an (x, y) location in the grid."""
 
+    def __init__(self, grid, initial=None, goal=None, **kwds):
+        super().__init__(initial, goal, **kwds)
+        self.grid = grid
+
     def actions(self, state):
+        """Return valid neighboring positions that are not blocked."""
         return [p for p in self.grid.neighbors(state) if self.grid[state] != "#"]
 
-    def h(self, node):
-        return taxi_distance(node.state, self.goal)
+    def h(self, node) -> float:
+        """Return the Manhattan distance heuristic."""
+        if self.goal is None:
+            return 0.0
+        return float(taxi_distance(node.state, self.goal))
 
 
 class Node:
     "A Node in a search tree."
 
-    def __init__(self, state, parent=None, action=None, path_cost=0):
+    def __init__(self, state, parent=None, action=None, path_cost: float = 0):
         self.state = state
         self.parent = parent
         self.action = action

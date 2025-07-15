@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aoc import answer, parse_year
+from aoc import answer, parse_year, summary
 
 parse = parse_year(2023)
 
@@ -55,3 +55,6 @@ assert get_calibration_value2("zoneight234") == 14
 assert get_calibration_value2("7pqrstsixteen") == 76
 
 answer(1.2, 55358, lambda: sum(map(get_calibration_value2, in1)))
+
+# %% Summary
+summary()

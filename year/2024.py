@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aoc import answer, ints, parse_year, flatten
+from aoc import answer, ints, parse_year, flatten, summary
 from itertools import combinations
 import re
 
@@ -206,3 +206,6 @@ def count_word_occurrences2(grid, word):
 
 assert count_word_occurrences2(parse(test42, tuple), "MAS") == 9
 answer(4.2, 1737, lambda: count_word_occurrences2(in4, "MAS"))
+
+# %% Summary
+summary()

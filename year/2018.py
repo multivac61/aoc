@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 from itertools import cycle
-from aoc import answer, atom, parse_year
+
+from aoc import answer, atom, parse_year, summary
 
 parse = parse_year(2018)
 
@@ -22,3 +23,6 @@ def find_first_repeated_freq(frequencies):
 
 
 answer(1.2, 394, lambda: find_first_repeated_freq(in1))
+
+# %% Summary
+summary()

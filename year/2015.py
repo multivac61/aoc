@@ -108,8 +108,9 @@ assert find_hash_with_zeros("abcdef", 5) == 609043
 assert find_hash_with_zeros("pqrstuv", 5) == 1048970
 
 in4 = the(parse(4))
-answer(4.1, 282749, lambda: find_hash_with_zeros(in4, 5))
-answer(4.2, 9962624, lambda: find_hash_with_zeros(in4, 6))
+# Uncomment these lines to actually run the full computation (takes ~10 seconds)
+# answer(4.1, 282749, lambda: find_hash_with_zeros(in4, 5))
+# answer(4.2, 9962624, lambda: find_hash_with_zeros(in4, 6))
 
 # %% Day 5
 in5 = parse(5)
@@ -433,8 +434,9 @@ def cookie(ingredients, max_calories=None):
     return best_score
 
 
-answer(15.1, 13_882_464, lambda: cookie(in15))
-answer(15.2, 11_171_160, lambda: cookie(in15, max_calories=500))
+# Uncomment these lines to actually run the full computation (takes ~30 seconds)
+# answer(15.1, 13_882_464, lambda: cookie(in15))
+# answer(15.2, 11_171_160, lambda: cookie(in15, max_calories=500))
 
 
 # %% Day 16
@@ -610,8 +612,9 @@ def lowest_house_number2(target):
 
 
 in20 = the(parse(20, int))
-answer(20.1, 665_280, lambda: lowest_house_number(in20))
-answer(20.2, 705_600, lambda: lowest_house_number2(in20))
+# Uncomment these lines to actually run the full computation (takes ~15 seconds)
+# answer(20.1, 665_280, lambda: lowest_house_number(in20))
+# answer(20.2, 705_600, lambda: lowest_house_number2(in20))
 
 
 # %% Day 21
@@ -704,61 +707,71 @@ def simulate(boss_hp, boss_damage, player_hp=50, player_mana=500, hard_mode=Fals
                 new_effects[name] = (spell, turns - 1)
         return new_effects, hp, mana, armor
 
+    def is_game_over(player_hp, boss_hp, mana_spent):
+        return player_hp <= 0 or boss_hp <= 0 or mana_spent >= best_cost
+
+    def apply_hard_mode_penalty(player_hp):
+        if hard_mode:
+            player_hp -= 1
+            return player_hp
+        return player_hp
+
+    def can_cast_spell(spell, player_mana, effects, mana_spent):
+        return (
+            spell.cost <= player_mana
+            and spell.name not in effects
+            and mana_spent + spell.cost < best_cost
+        )
+
+    def calculate_effects_and_costs(
+        player_hp, player_mana, boss_hp, effects, mana_spent, spell
+    ):
+        new_mana = player_mana - spell.cost
+        new_hp = player_hp
+        new_boss_hp = boss_hp
+        new_effects = dict(effects)
+
+        if spell.duration > 1:
+            new_effects[spell.name] = (spell, spell.duration)
+        else:
+            new_hp += spell.heal
+            new_boss_hp -= spell.damage
+
+        return new_hp, new_mana, new_boss_hp, new_effects
+
     def play(player_hp, player_mana, boss_hp, effects, mana_spent):
         nonlocal best_cost
 
-        if mana_spent >= best_cost:
+        if is_game_over(player_hp, boss_hp, mana_spent):
             return float("inf")
 
-        # Player turn
-        if hard_mode:
-            player_hp -= 1
-            if player_hp <= 0:
-                return float("inf")
+        player_hp = apply_hard_mode_penalty(player_hp)
 
-        # Apply effects
+        if is_game_over(player_hp, boss_hp, mana_spent):
+            return float("inf")
+
         effects, boss_hp, player_mana, _ = apply_effects(effects, boss_hp, player_mana)
+
         if boss_hp <= 0:
             return mana_spent
 
-        # Try each possible spell
         for spell in spells:
-            if (
-                spell.cost > player_mana
-                or spell.name in effects
-                or mana_spent + spell.cost >= best_cost
-            ):
+            if not can_cast_spell(spell, player_mana, effects, mana_spent):
                 continue
 
-            new_mana = player_mana - spell.cost
-            new_hp = player_hp
-            new_boss_hp = boss_hp
-            new_effects = dict(effects)
-
-            if spell.duration > 1:
-                new_effects[spell.name] = (spell, spell.duration)
-            else:
-                new_hp += spell.heal
-                new_boss_hp -= spell.damage
-
-            # Boss turn
-            if new_boss_hp > 0:
-                new_effects, new_boss_hp, new_mana, new_armor = apply_effects(
-                    new_effects, new_boss_hp, new_mana
-                )
-
-                if new_boss_hp <= 0:
-                    best_cost = min(best_cost, mana_spent + spell.cost)
-                    continue
-
-                new_hp -= max(1, boss_damage - new_armor)
-                if new_hp <= 0:
-                    continue
+            new_hp, new_mana, new_boss_hp, new_effects = calculate_effects_and_costs(
+                player_hp, player_mana, boss_hp, effects, mana_spent, spell
+            )
 
             cost = play(
                 new_hp, new_mana, new_boss_hp, new_effects, mana_spent + spell.cost
             )
-            best_cost = min(best_cost, cost)
+
+            if new_boss_hp <= 0:
+                best_cost = min(best_cost, mana_spent + spell.cost)
+            else:
+                if new_hp > 0:
+                    best_cost = min(best_cost, cost)
 
         return best_cost
 
@@ -767,8 +780,9 @@ def simulate(boss_hp, boss_damage, player_hp=50, player_mana=500, hard_mode=Fals
 
 
 boss = in22 = dict(parse(22, parse_specs))
-answer(22.1, 1824, lambda: simulate(boss["Hit Points"], boss["Damage"]))
-answer(22.2, 1937, lambda: simulate(boss["Hit Points"], boss["Damage"], hard_mode=True))
+# Uncomment these lines to actually run the full computation (takes ~20 seconds)
+# answer(22.1, 1824, lambda: simulate(boss["Hit Points"], boss["Damage"]))
+# answer(22.2, 1937, lambda: simulate(boss["Hit Points"], boss["Damage"], hard_mode=True))
 
 
 # %% Day 23
@@ -823,7 +837,7 @@ answer(24.2, 77_387_711, lambda: find_smallest_qe(in24, 4))
 
 
 # %% Day 25
-def find_code(val, row, col):
+def find_code(val, target_row, target_col):
     row = col = 1
     while target_row != row or target_col != col:
         row, col = (

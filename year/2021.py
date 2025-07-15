@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aoc import answer, parse_year
+from aoc import answer, parse_year, summary
 from itertools import pairwise, islice
 
 parse = parse_year(current_year=2021)
@@ -33,3 +33,6 @@ assert count_window_increases(test1) == 5
 answer(1.2, 1103, lambda: count_window_increases(in1))
 
 # %%
+
+# %% Summary
+summary()
