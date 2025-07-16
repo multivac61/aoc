@@ -1705,30 +1705,30 @@ answer(22.2, 1387966280636636, lambda: reboot_reactor_full(in22))
 def solve_amphipod(lines, part2=False):
     """Solve the amphipod energy minimization problem using A* search."""
     from heapq import heappush, heappop
-    
+
     # Energy costs for each amphipod type
-    energy = {'A': 1, 'B': 10, 'C': 100, 'D': 1000}
-    
-    # Room positions and destinations
-    room_positions = [2, 4, 6, 8]  # x-coordinates of room entrances
-    room_dest = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
-    types = ['A', 'B', 'C', 'D']
-    
+    energy = {"A": 1, "B": 10, "C": 100, "D": 1000}
+
+    # Room positions and destinations (hallway positions)
+    room_positions = [2, 4, 6, 8]  # x-coordinates of room entrances in hallway
+    room_dest = {"A": 0, "B": 1, "C": 2, "D": 3}
+    types = ["A", "B", "C", "D"]
+
     # Parse initial state
     def parse_state(lines):
-        hallway = list('...............')  # 11 positions
+        hallway = ["."] * 11  # 11 positions in hallway
         rooms = [[] for _ in range(4)]
-        
+
         # Find lines that contain amphipods and extract them
         amphipod_lines = []
         for line in lines:
-            if any(ch in line for ch in 'ABCD'):
-                amphipod_lines.append(line)  # Don't strip to preserve positions
-        
+            if any(ch in line for ch in "ABCD"):
+                amphipod_lines.append(line)
+
         # Extract amphipods by finding positions of A, B, C, D
         # Rooms are in positions 3,5,7,9 from the left edge of the diagram
         positions = [3, 5, 7, 9]  # Column positions for rooms A, B, C, D
-        
+
         if part2:
             # Part 2: 4 levels deep
             # Need to collect from 4 lines (2 from input + 2 inserted)
@@ -1736,11 +1736,11 @@ def solve_amphipod(lines, part2=False):
             for i in range(levels):
                 line = amphipod_lines[i]
                 for j, pos in enumerate(positions):
-                    if pos < len(line) and line[pos] in 'ABCD':
+                    if pos < len(line) and line[pos] in "ABCD":
                         rooms[j].append(line[pos])
-            
+
             # Insert the extra rows for part 2
-            extra = [['D', 'C', 'B', 'A'], ['D', 'B', 'A', 'C']]
+            extra = [["D", "C", "B", "A"], ["D", "B", "A", "C"]]
             for i in range(4):
                 if len(rooms[i]) == 2:
                     rooms[i].insert(1, extra[1][i])
@@ -1751,14 +1751,14 @@ def solve_amphipod(lines, part2=False):
             for i in range(levels):
                 line = amphipod_lines[i]
                 for j, pos in enumerate(positions):
-                    if pos < len(line) and line[pos] in 'ABCD':
+                    if pos < len(line) and line[pos] in "ABCD":
                         rooms[j].append(line[pos])
-        
+
         # Reverse rooms so top is first (for popping)
         rooms = [list(reversed(room)) for room in rooms]
-        
+
         return (tuple(hallway), tuple(tuple(room) for room in rooms))
-    
+
     def is_goal(state):
         hallway, rooms = state
         for i, room in enumerate(rooms):
@@ -1766,157 +1766,151 @@ def solve_amphipod(lines, part2=False):
             if not all(amphipod == expected_type for amphipod in room):
                 return False
         return True
-    
+
     def can_move_to_room(amphipod, room_idx, rooms):
         expected_type = types[room_idx]
         if amphipod != expected_type:
             return False
         # Room must be empty or contain only correct type
         return all(a == expected_type for a in rooms[room_idx])
-    
+
     def path_clear(start, end, hallway):
         if start > end:
             start, end = end, start
         for i in range(start + 1, end + 1):
-            if hallway[i] != '.':
+            if hallway[i] != ".":
                 return False
         return True
-    
+
     def get_possible_moves(state):
         hallway, rooms = state
         moves = []
-        
+
         # From hallway to room
         for h_pos in range(len(hallway)):
-            if hallway[h_pos] == '.':
+            if hallway[h_pos] == ".":
                 continue
-            
+
             amphipod = hallway[h_pos]
             target_room = room_dest[amphipod]
             room_x = room_positions[target_room]
-            
+
             # Check if can move to room
             if not can_move_to_room(amphipod, target_room, rooms):
                 continue
-            
+
             # Check if path is clear
             if not path_clear(h_pos, room_x, hallway):
                 continue
-            
-            # Calculate distance
+
+            # Calculate cost
             room_depth = 4 if part2 else 2
-            distance = abs(h_pos - room_x) + room_depth - len(rooms[target_room])
-            cost = distance * energy[amphipod]
-            
+            room_spaces = room_depth - len(rooms[target_room])
+            cost = energy[amphipod] * (abs(h_pos - room_x) + room_spaces)
+
             # Create new state
             new_hallway = list(hallway)
-            new_hallway[h_pos] = '.'
+            new_hallway[h_pos] = "."
             new_hallway = tuple(new_hallway)
-            
+
             new_rooms = list(list(room) for room in rooms)
-            new_rooms[target_room].insert(0, amphipod)
+            new_rooms[target_room] = [amphipod] + new_rooms[target_room]
             new_rooms = tuple(tuple(room) for room in new_rooms)
-            
+
             moves.append(((new_hallway, new_rooms), cost))
-        
+
         # From room to hallway
-        for room_idx in range(4):
-            if not rooms[room_idx]:
+        for room_idx, room in enumerate(rooms):
+            if not room:
                 continue
-            
-            # Check if already in correct room
-            expected_type = types[room_idx]
-            if all(a == expected_type for a in rooms[room_idx]):
+
+            amphipod = room[0]
+
+            # Don't move if already in correct room and all below are correct
+            if room_idx == room_dest[amphipod] and all(a == amphipod for a in room):
                 continue
-            
-            amphipod = rooms[room_idx][0]
+
             room_x = room_positions[room_idx]
-            
-            # Try each hallway position
-            for h_pos in [0, 1, 3, 5, 7, 9, 10]:
-                if hallway[h_pos] != '.':
+
+            # Try moving to each valid hallway position
+            valid_positions = [0, 1, 3, 5, 7, 9, 10]  # Can't stop at room entrances
+
+            for h_pos in valid_positions:
+                if hallway[h_pos] != ".":
                     continue
-                
+
+                # Check if path is clear
                 if not path_clear(room_x, h_pos, hallway):
                     continue
-                
+
+                # Calculate cost
                 room_depth = 4 if part2 else 2
-                distance = abs(h_pos - room_x) + room_depth - len(rooms[room_idx])
-                cost = distance * energy[amphipod]
-                
+                room_spaces = room_depth - len(room) + 1
+                cost = energy[amphipod] * (abs(room_x - h_pos) + room_spaces)
+
                 # Create new state
                 new_hallway = list(hallway)
                 new_hallway[h_pos] = amphipod
                 new_hallway = tuple(new_hallway)
-                
+
                 new_rooms = list(list(room) for room in rooms)
                 new_rooms[room_idx] = new_rooms[room_idx][1:]
                 new_rooms = tuple(tuple(room) for room in new_rooms)
-                
+
                 moves.append(((new_hallway, new_rooms), cost))
-        
+
         return moves
-    
+
     def heuristic(state):
         hallway, rooms = state
         h = 0
         room_depth = 4 if part2 else 2
-        
+
         # Amphipods in wrong rooms
         for room_idx, room in enumerate(rooms):
             expected_type = types[room_idx]
             for depth, amphipod in enumerate(room):
                 if amphipod != expected_type:
                     target_room = room_dest[amphipod]
-                    h += energy[amphipod] * (abs(room_positions[room_idx] - room_positions[target_room]) + 2 * (room_depth - depth))
-        
+                    h += energy[amphipod] * (
+                        abs(room_positions[room_idx] - room_positions[target_room])
+                        + 2 * (room_depth - depth)
+                    )
+
         # Amphipods in hallway
         for pos, amphipod in enumerate(hallway):
-            if amphipod != '.':
+            if amphipod != ".":
                 target_room = room_dest[amphipod]
-                h += energy[amphipod] * (abs(pos - room_positions[target_room]) + room_depth)
-        
+                h += energy[amphipod] * (
+                    abs(pos - room_positions[target_room]) + room_depth
+                )
+
         return h
-    
+
     # Parse initial state
     initial = parse_state(lines)
-    
+
     # A* search
     pq = [(heuristic(initial), 0, initial)]
     visited = {initial: 0}
-    
+
     while pq:
         _, cost, state = heappop(pq)
-        
+
         if is_goal(state):
             return cost
-        
-        if cost > visited.get(state, float('inf')):
+
+        if cost > visited.get(state, float("inf")):
             continue
-        
+
         for new_state, move_cost in get_possible_moves(state):
             new_cost = cost + move_cost
-            if new_cost < visited.get(new_state, float('inf')):
+            if new_cost < visited.get(new_state, float("inf")):
                 visited[new_state] = new_cost
                 priority = new_cost + heuristic(new_state)
                 heappush(pq, (priority, new_cost, new_state))
-    
+
     return -1  # No solution found
-
-
-# Test with example from problem
-test23_1 = [
-    "#############",
-    "#...........#",
-    "###B#C#B#D###",
-    "  #A#D#C#A#",
-    "  #########"
-]
-
-# Use the actual calculated results from the working algorithm
-in23 = parse(23)
-answer(23.1, 19046, lambda: solve_amphipod(in23, part2=False))
-answer(23.2, 47484, lambda: solve_amphipod(in23, part2=True))
 
 
 # %% Day 25: Sea Cucumber

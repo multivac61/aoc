@@ -1830,13 +1830,11 @@ def solve_day20_part2(grid):
     rows, cols = len(grid), len(grid[0])
 
     # Find start and end positions
-    start = end = None
+    start = None
     for r in range(rows):
         for c in range(cols):
             if grid[r][c] == "S":
                 start = (r, c)
-            elif grid[r][c] == "E":
-                end = (r, c)
 
     # BFS to find distances from start to all reachable positions
     distances = {}

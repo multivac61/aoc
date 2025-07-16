@@ -1081,7 +1081,7 @@ def solve_lens_library(sequence, part2=False):
             # Remove lens
             label = step[:-1]
             box_num = hash_algorithm(label)
-            boxes[box_num] = [(l, f) for l, f in boxes[box_num] if l != label]
+            boxes[box_num] = [(lab, f) for lab, f in boxes[box_num] if lab != label]
 
     # Calculate focusing power
     total_power = 0
