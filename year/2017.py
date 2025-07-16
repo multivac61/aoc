@@ -18,6 +18,7 @@ from aoc import (
     taxi_distance,
     directions4,
     summary,
+    manhattan_distance_3d,
 )
 
 parse = parse_year(2017)
@@ -793,14 +794,14 @@ def parse_particle(line):
     return position, velocity, acceleration
 
 
-# Use taxi_distance from aoc module for 2D, manual for 3D
+# Use taxi_distance from aoc module for 2D, manhattan_distance_3d for 3D
 def manhattan_distance(point):
     """Calculate Manhattan distance from origin."""
     if len(point) == 2:
         return taxi_distance(point, (0, 0))
     else:
-        # 3D case - taxi_distance only works for 2D
-        return sum(abs(x) for x in point)
+        # 3D case - use shared utility
+        return manhattan_distance_3d(point, (0, 0, 0))
 
 
 def find_closest_particle(particles):

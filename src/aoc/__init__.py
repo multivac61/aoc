@@ -870,6 +870,169 @@ def main():
     return 0
 
 
+# =============================================================================
+# ADDITIONAL UTILITIES FOR ADVENT OF CODE
+# =============================================================================
+
+def bfs_shortest_path(grid, start, end, valid_cell=lambda x: x != '#'):
+    """Find shortest path in grid using BFS."""
+    if start == end:
+        return 0
+    
+    queue = deque([(start, 0)])
+    visited = {start}
+    
+    while queue:
+        pos, dist = queue.popleft()
+        
+        for neighbor in neighbors(pos, grid.directions):
+            if neighbor in grid and neighbor not in visited and valid_cell(grid[neighbor]):
+                if neighbor == end:
+                    return dist + 1
+                visited.add(neighbor)
+                queue.append((neighbor, dist + 1))
+    
+    return None
+
+
+def dijkstra_shortest_path(grid, start, end, cost_fn=lambda x: 1):
+    """Find shortest path using Dijkstra's algorithm with custom cost function."""
+    if start == end:
+        return 0
+    
+    pq = [(0, start)]
+    distances = {start: 0}
+    
+    while pq:
+        current_dist, pos = heapq.heappop(pq)
+        
+        if pos == end:
+            return current_dist
+        
+        if current_dist > distances.get(pos, float('inf')):
+            continue
+        
+        for neighbor in neighbors(pos, grid.directions):
+            if neighbor in grid:
+                cost = cost_fn(grid[neighbor])
+                if cost == float('inf'):  # Blocked cell
+                    continue
+                    
+                new_dist = current_dist + cost
+                if new_dist < distances.get(neighbor, float('inf')):
+                    distances[neighbor] = new_dist
+                    heapq.heappush(pq, (new_dist, neighbor))
+    
+    return None
+
+
+def manhattan_distance_3d(p1, p2):
+    """Calculate Manhattan distance between two 3D points."""
+    return abs(p1[0] - p2[0]) + abs(p1[1] - p2[1]) + abs(p1[2] - p2[2])
+
+
+def parse_coordinate_pairs(lines, separator=','):
+    """Parse lines containing coordinate pairs like 'x,y' or 'x y'."""
+    coords = []
+    for line in lines:
+        if separator in line:
+            parts = line.split(separator)
+        else:
+            parts = line.split()
+        
+        if len(parts) >= 2:
+            x, y = int(parts[0].strip()), int(parts[1].strip())
+            coords.append((x, y))
+    
+    return coords
+
+
+def parse_instructions(lines):
+    """Parse instruction lines like 'move 3', 'turn left 90', etc."""
+    instructions = []
+    
+    for line in lines:
+        words = line.split()
+        if len(words) >= 2:
+            action = words[0]
+            try:
+                value = int(words[1])
+                instructions.append((action, value))
+            except ValueError:
+                instructions.append((action, words[1]))
+    
+    return instructions
+
+
+def find_all_in_grid(grid, target):
+    """Find all positions in grid containing target character."""
+    return [pos for pos in grid if grid[pos] == target]
+
+
+def flood_fill(grid, start, target_value, new_value):
+    """Flood fill algorithm to find connected regions."""
+    if grid.get(start) != target_value:
+        return set()
+    
+    queue = deque([start])
+    visited = {start}
+    filled = set()
+    
+    while queue:
+        pos = queue.popleft()
+        
+        if grid.get(pos) == target_value:
+            grid[pos] = new_value
+            filled.add(pos)
+            
+            for neighbor in neighbors(pos, grid.directions):
+                if neighbor not in visited and grid.get(neighbor) == target_value:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+    
+    return filled
+
+
+def connected_components(graph):
+    """Find all connected components in an undirected graph."""
+    visited = set()
+    components = []
+    
+    for node in graph:
+        if node not in visited:
+            component = set()
+            stack = [node]
+            
+            while stack:
+                current = stack.pop()
+                if current not in visited:
+                    visited.add(current)
+                    component.add(current)
+                    stack.extend(graph.get(current, []))
+            
+            components.append(component)
+    
+    return components
+
+
+def cycle_detection(initial_state, step_function, max_iterations=1000):
+    """Simulate with cycle detection to handle infinite loops."""
+    seen_states = {initial_state: 0}
+    state = initial_state
+    
+    for iteration in range(1, max_iterations + 1):
+        state = step_function(state)
+        
+        if state in seen_states:
+            cycle_start = seen_states[state]
+            cycle_length = iteration - cycle_start
+            return state, cycle_start, cycle_length
+        
+        seen_states[state] = iteration
+    
+    return state, None, None
+
+
 if __name__ == "__main__":
     import sys
 

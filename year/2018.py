@@ -13,6 +13,7 @@ from aoc import (
     parse_year,
     summary,
     the,
+    manhattan_distance_3d,
 )
 
 parse = parse_year(2018)
@@ -2438,7 +2439,11 @@ def parse_points(lines):
 
 
 def manhattan_distance(p1, p2):
-    return sum(abs(a - b) for a, b in zip(p1, p2))
+    # Use shared utility for 3D and 4D points
+    if len(p1) == 3:
+        return manhattan_distance_3d(p1, p2)
+    else:
+        return sum(abs(a - b) for a, b in zip(p1, p2))
 
 
 def find_constellations(points):
