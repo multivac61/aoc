@@ -3,11 +3,11 @@
     "aoc-inputs": {
       "flake": false,
       "locked": {
-        "lastModified": 1736172000,
-        "narHash": "sha256-FrS506e3A5hc/4mEdgqlwUZp6No7wzI//pCQBGW1K20=",
+        "lastModified": 1752628099,
+        "narHash": "sha256-zumzHqWZssqc9dILGcMEaUU+oRnQ6q+UzudNDQyMTS4=",
         "owner": "multivac61",
         "repo": "aoc-inputs",
-        "rev": "2d34f5610d24c48b57f9b414eecd01d1a48e01da",
+        "rev": "211e444e0b2ad7cf4050c713877c587bd8d7a537",
         "type": "github"
       },
       "original": {
