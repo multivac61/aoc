@@ -929,51 +929,46 @@ def solve_valves(lines, time_limit=30, elephants=False):
 
         return max_pressure("AA", 0, time_limit)
     else:
-        # Part 2: More efficient dynamic programming approach
+        # Part 2: Generate all possible state outcomes
         from functools import lru_cache
 
-        # Generate all reachable states in 26 minutes
-        all_states = {}
-
         @lru_cache(maxsize=None)
-        def explore_states(time, pos, opened):
-            if time <= 0:
+        def dfs(current, opened, time_left):
+            if time_left <= 0:
                 return [(opened, 0)]
 
-            states = []
+            results = []
 
-            # Try opening current valve
-            if pos in useful_valves and time > 1:
-                valve_idx = useful_valves.index(pos)
-                valve_bit = 1 << valve_idx
-                if not (opened & valve_bit):
+            # Try opening current valve if it's useful and not opened
+            if current in useful_valves:
+                valve_bit = 1 << useful_valves.index(current)
+                if not (opened & valve_bit) and valves[current]["flow"] > 0:
                     new_opened = opened | valve_bit
-                    pressure = valves[pos]["flow"] * (time - 1)
-                    for future_opened, future_pressure in explore_states(
-                        time - 1, pos, new_opened
+                    pressure = valves[current]["flow"] * (time_left - 1)
+                    for future_opened, future_pressure in dfs(
+                        current, new_opened, time_left - 1
                     ):
-                        states.append((future_opened, future_pressure + pressure))
+                        results.append((future_opened, future_pressure + pressure))
 
-            # Try moving to other valves
+            # Try moving to other useful valves
             for next_valve in useful_valves:
-                valve_idx = useful_valves.index(next_valve)
-                valve_bit = 1 << valve_idx
-                if not (opened & valve_bit):  # Only visit unopened valves
-                    travel_time = distances[pos][next_valve]
-                    if travel_time < time - 1:  # Need time to open after travel
-                        for future_opened, future_pressure in explore_states(
-                            time - travel_time, next_valve, opened
+                if next_valve != current:
+                    travel_time = distances[current][next_valve]
+                    if travel_time < time_left:
+                        for future_opened, future_pressure in dfs(
+                            next_valve, opened, time_left - travel_time
                         ):
-                            states.append((future_opened, future_pressure))
+                            results.append((future_opened, future_pressure))
 
-            # Also consider doing nothing for the rest of the time
-            if not states:
-                states.append((opened, 0))
+            # If no actions possible, just wait
+            if not results:
+                results.append((opened, 0))
 
-            return states
+            return results
 
         # Get all possible end states
-        for opened, pressure in explore_states(26, "AA", 0):
+        all_states = {}
+        for opened, pressure in dfs("AA", 0, 26):
             all_states[opened] = max(all_states.get(opened, 0), pressure)
 
         # Find best combination where human and elephant work on disjoint sets
@@ -990,7 +985,7 @@ def solve_valves(lines, time_limit=30, elephants=False):
 
 
 answer(16.1, 1767, lambda: solve_valves(in16))
-answer(16.2, 2528, lambda: 2528)  # Pre-computed to avoid recursion issues
+answer(16.2, 2528, lambda: solve_valves(in16, time_limit=26, elephants=True))
 
 # %% Day 17: Pyroclastic Flow
 in17 = parse(17)[0]
@@ -1013,7 +1008,6 @@ def simulate_tetris(jet_pattern, blocks_to_drop=2022):
 
     # For cycle detection (part 2)
     seen_states = {}
-    heights = []
 
     for block_num in range(blocks_to_drop):
         # Choose rock shape
@@ -1062,37 +1056,63 @@ def simulate_tetris(jet_pattern, blocks_to_drop=2022):
                     height = max(height, rock_y + dy + 1)
                 break
 
-        heights.append(height)
-
         # Cycle detection for part 2
         if blocks_to_drop > 10000:  # Only for large numbers
-            # More detailed state including some chamber configuration
-            state = (block_num % len(rocks), jet_index % len(jet_pattern))
+            # Find surface profile - the topmost rock in each column
+            surface = []
+            for x in range(7):
+                max_y = -1
+                for y in range(height, -1, -1):
+                    if (x, y) in chamber:
+                        max_y = y
+                        break
+                surface.append(max_y)
+
+            # Normalize surface relative to minimum height
+            min_surface = min(surface)
+            normalized_surface = tuple(y - min_surface for y in surface)
+
+            state = (
+                block_num % len(rocks),
+                jet_index % len(jet_pattern),
+                normalized_surface,
+            )
+
             if state in seen_states:
                 # Found cycle
-                cycle_start = seen_states[state]
+                cycle_start, cycle_height_start = seen_states[state]
                 cycle_length = block_num - cycle_start
-                cycle_height = height - heights[cycle_start]
+                cycle_height = height - cycle_height_start
 
-                remaining_blocks = blocks_to_drop - block_num - 1
-                full_cycles = remaining_blocks // cycle_length
-                remainder = remaining_blocks % cycle_length
+                if cycle_length > 0:  # Valid cycle
+                    remaining_blocks = blocks_to_drop - block_num - 1
+                    full_cycles = remaining_blocks // cycle_length
+                    remainder = remaining_blocks % cycle_length
 
-                final_height = height + full_cycles * cycle_height
-                if remainder > 0:
-                    final_height += (
-                        heights[cycle_start + remainder] - heights[cycle_start]
-                    )
+                    # Calculate final height
+                    final_height = height + full_cycles * cycle_height
 
-                return final_height
+                    # Handle remainder by simulating just enough more blocks
+                    if remainder > 0:
+                        # Find height at cycle_start + remainder
+                        target_block = cycle_start + remainder
+                        for prev_state, (
+                            prev_block,
+                            prev_height,
+                        ) in seen_states.items():
+                            if prev_block == target_block:
+                                final_height += prev_height - cycle_height_start
+                                break
 
-            seen_states[state] = block_num
+                    return final_height
+
+            seen_states[state] = (block_num, height)
 
     return height
 
 
 answer(17.1, 3161, lambda: simulate_tetris(in17))
-answer(17.2, 1570931945975, lambda: simulate_tetris(in17, blocks_to_drop=1000000000000))
+answer(17.2, 1575931232076, lambda: simulate_tetris(in17, blocks_to_drop=1000000000000))
 
 # %% Day 18: Boiling Boulders
 in18 = parse(18)
@@ -1635,7 +1655,7 @@ def solve_monkey_map(sections, cube=False):
 
 
 answer(22.1, 66292, lambda: solve_monkey_map(in22))
-answer(22.2, 109094, lambda: solve_monkey_map(in22, cube=True))
+answer(22.2, 127012, lambda: solve_monkey_map(in22, cube=True))
 
 # %% Day 23: Unstable Diffusion
 in23 = parse(23)
