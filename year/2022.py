@@ -119,11 +119,11 @@ def count_overlaps(lines):
     """Count pairs where one range fully contains the other."""
     count = 0
     for line in lines:
-        if line.strip() and ',' in line and '-' in line:  # Valid range format
-            parts = line.split(',')
+        if line.strip() and "," in line and "-" in line:  # Valid range format
+            parts = line.split(",")
             if len(parts) == 2:
-                left = parts[0].split('-')
-                right = parts[1].split('-')
+                left = parts[0].split("-")
+                right = parts[1].split("-")
                 if len(left) == 2 and len(right) == 2:
                     a, b = int(left[0]), int(left[1])
                     c, d = int(right[0]), int(right[1])
@@ -136,11 +136,11 @@ def count_any_overlaps(lines):
     """Count pairs with any overlap."""
     count = 0
     for line in lines:
-        if line.strip() and ',' in line and '-' in line:  # Valid range format
-            parts = line.split(',')
+        if line.strip() and "," in line and "-" in line:  # Valid range format
+            parts = line.split(",")
             if len(parts) == 2:
-                left = parts[0].split('-')
-                right = parts[1].split('-')
+                left = parts[0].split("-")
+                right = parts[1].split("-")
                 if len(left) == 2 and len(right) == 2:
                     a, b = int(left[0]), int(left[1])
                     c, d = int(right[0]), int(right[1])
@@ -165,21 +165,21 @@ def parse_stacks_and_moves(lines):
         if line.strip() == "":
             divider_index = i
             break
-    
+
     if divider_index == -1:
         raise ValueError("No divider found")
-    
+
     stack_lines = lines[:divider_index]
-    move_lines = lines[divider_index + 1:]
-    
+    move_lines = lines[divider_index + 1 :]
+
     # Parse stacks
     # Find the stack numbers line (last line of stack section)
     stack_numbers_line = stack_lines[-1]
     num_stacks = len([x for x in stack_numbers_line.split() if x.isdigit()])
-    
+
     # Initialize stacks
     stacks = [[] for _ in range(num_stacks)]
-    
+
     # Parse stack contents (from bottom to top, so reverse)
     for line in reversed(stack_lines[:-1]):  # Skip the numbers line
         for i in range(num_stacks):
@@ -187,7 +187,7 @@ def parse_stacks_and_moves(lines):
             pos = 4 * i + 1
             if pos < len(line) and line[pos].isalpha():
                 stacks[i].append(line[pos])
-    
+
     # Parse moves
     moves = []
     for line in move_lines:
@@ -196,16 +196,16 @@ def parse_stacks_and_moves(lines):
             if len(parts) >= 6:
                 count = int(parts[1])
                 from_stack = int(parts[3]) - 1  # Convert to 0-based
-                to_stack = int(parts[5]) - 1    # Convert to 0-based
+                to_stack = int(parts[5]) - 1  # Convert to 0-based
                 moves.append((count, from_stack, to_stack))
-    
+
     return stacks, moves
 
 
 def solve_supply_stacks(lines, part2=False):
     """Solve supply stacks problem."""
     stacks, moves = parse_stacks_and_moves(lines)
-    
+
     for count, from_stack, to_stack in moves:
         if part2:
             # Part 2: Move multiple crates at once (preserve order)
@@ -222,7 +222,7 @@ def solve_supply_stacks(lines, part2=False):
                 if stacks[from_stack]:
                     crate = stacks[from_stack].pop()
                     stacks[to_stack].append(crate)
-    
+
     # Get top crates
     result = ""
     for stack in stacks:
@@ -230,7 +230,7 @@ def solve_supply_stacks(lines, part2=False):
             result += stack[-1]
         else:
             result += " "
-    
+
     return result
 
 
@@ -910,14 +910,20 @@ def solve_valves(lines, time_limit=30, elephants=False):
                 if not (opened & valve_bit) and valves[current]["flow"] > 0:
                     new_opened = opened | valve_bit
                     pressure = valves[current]["flow"] * (time_left - 1)
-                    best = max(best, pressure + max_pressure(current, new_opened, time_left - 1))
+                    best = max(
+                        best,
+                        pressure + max_pressure(current, new_opened, time_left - 1),
+                    )
 
             # Try moving to other useful valves
             for next_valve in useful_valves:
                 if next_valve != current:
                     travel_time = distances[current][next_valve]
                     if travel_time < time_left:
-                        best = max(best, max_pressure(next_valve, opened, time_left - travel_time))
+                        best = max(
+                            best,
+                            max_pressure(next_valve, opened, time_left - travel_time),
+                        )
 
             return best
 
@@ -926,7 +932,7 @@ def solve_valves(lines, time_limit=30, elephants=False):
         # Part 2: You and elephant working together
         # More efficient approach: calculate max pressure for each subset once
         from functools import lru_cache
-        
+
         # Calculate max pressure when restricted to a specific subset of valves
         @lru_cache(maxsize=None)
         def max_pressure_with_mask(current, opened, time_left, allowed_mask):
@@ -939,10 +945,20 @@ def solve_valves(lines, time_limit=30, elephants=False):
             if current in useful_valves:
                 valve_idx = useful_valves.index(current)
                 valve_bit = 1 << valve_idx
-                if (allowed_mask & valve_bit) and not (opened & valve_bit) and valves[current]["flow"] > 0:
+                if (
+                    (allowed_mask & valve_bit)
+                    and not (opened & valve_bit)
+                    and valves[current]["flow"] > 0
+                ):
                     new_opened = opened | valve_bit
                     pressure = valves[current]["flow"] * (time_left - 1)
-                    best = max(best, pressure + max_pressure_with_mask(current, new_opened, time_left - 1, allowed_mask))
+                    best = max(
+                        best,
+                        pressure
+                        + max_pressure_with_mask(
+                            current, new_opened, time_left - 1, allowed_mask
+                        ),
+                    )
 
             # Try moving to other useful valves that are in allowed set
             for next_valve in useful_valves:
@@ -952,30 +968,38 @@ def solve_valves(lines, time_limit=30, elephants=False):
                     if allowed_mask & valve_bit:  # Only consider allowed valves
                         travel_time = distances[current][next_valve]
                         if travel_time < time_left:
-                            best = max(best, max_pressure_with_mask(next_valve, opened, time_left - travel_time, allowed_mask))
+                            best = max(
+                                best,
+                                max_pressure_with_mask(
+                                    next_valve,
+                                    opened,
+                                    time_left - travel_time,
+                                    allowed_mask,
+                                ),
+                            )
 
             return best
-        
+
         # Calculate best pressure for each possible subset of valves
         n = len(useful_valves)
         subset_pressures = {}
-        
+
         for mask in range(1 << n):
             pressure = max_pressure_with_mask("AA", 0, 26, mask)
             subset_pressures[mask] = pressure
-        
+
         # Find the best way to partition the valves between human and elephant
         best_total = 0
-        
+
         for human_mask in range(1 << n):
             elephant_mask = ((1 << n) - 1) ^ human_mask  # Complement
-            
+
             human_pressure = subset_pressures[human_mask]
             elephant_pressure = subset_pressures[elephant_mask]
-            
+
             total = human_pressure + elephant_pressure
             best_total = max(best_total, total)
-        
+
         return best_total
 
 
@@ -1070,8 +1094,10 @@ def simulate_tetris(jet_pattern, blocks_to_drop=2022):
 
                 final_height = height + full_cycles * cycle_height
                 if remainder > 0:
-                    final_height += heights[cycle_start + remainder] - heights[cycle_start]
-                
+                    final_height += (
+                        heights[cycle_start + remainder] - heights[cycle_start]
+                    )
+
                 return final_height
 
             seen_states[state] = block_num
