@@ -5,15 +5,15 @@
       "locked": {
         "lastModified": 1752628099,
         "narHash": "sha256-zumzHqWZssqc9dILGcMEaUU+oRnQ6q+UzudNDQyMTS4=",
-        "owner": "multivac61",
-        "repo": "aoc-inputs",
+        "ref": "refs/heads/main",
         "rev": "211e444e0b2ad7cf4050c713877c587bd8d7a537",
-        "type": "github"
+        "revCount": 6,
+        "type": "git",
+        "url": "ssh://git@github.com/multivac61/aoc-inputs.git"
       },
       "original": {
-        "owner": "multivac61",
-        "repo": "aoc-inputs",
-        "type": "github"
+        "type": "git",
+        "url": "ssh://git@github.com/multivac61/aoc-inputs.git"
       }
     },
     "nixpkgs": {

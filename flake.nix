@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     aoc-inputs = {
-      url = "github:multivac61/aoc-inputs";
+      url = "git+ssh://git@github.com/multivac61/aoc-inputs.git";
       flake = false;
     };
 
