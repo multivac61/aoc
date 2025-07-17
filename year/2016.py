@@ -1239,5 +1239,5 @@ def find_clock_signal(instructions):
 in25 = parse(25, atoms)
 answer(25.1, 196, lambda: find_clock_signal(in25))
 
-# %%
+# %% Summary
 summary()
