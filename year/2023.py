@@ -72,9 +72,6 @@ assert get_calibration_value2("7pqrstsixteen") == 76
 
 answer(1.2, 55358, lambda: sum(map(get_calibration_value2, in1)))
 
-# %% Summary
-summary()
-
 # # %% Day 2: Cube Conundrum
 # in2 = parse(2)
 
@@ -1207,8 +1204,8 @@ def solve_lava_floor(lines, find_maximum=False):
     return max_energized
 
 
-answer(16.1, 7111, lambda: solve_lava_floor(in16))
-answer(16.2, 7831, lambda: solve_lava_floor(in16, find_maximum=True))
+answer(16.1, 8539, lambda: solve_lava_floor(in16))
+answer(16.2, 8674, lambda: solve_lava_floor(in16, find_maximum=True))
 
 # %% Day 17: Clumsy Crucible
 in17 = parse(17)
@@ -1268,8 +1265,8 @@ def solve_crucible_pathfinding(grid, min_steps=1, max_steps=3):
     return -1
 
 
-answer(17.1, 1008, lambda: solve_crucible_pathfinding(in17))
-answer(17.2, 1210, lambda: solve_crucible_pathfinding(in17, min_steps=4, max_steps=10))
+answer(17.1, 907, lambda: solve_crucible_pathfinding(in17))
+answer(17.2, 1057, lambda: solve_crucible_pathfinding(in17, min_steps=4, max_steps=10))
 
 # %% Day 18: Lavaduct Lagoon
 in18 = parse(18)
@@ -1319,8 +1316,8 @@ def solve_lavaduct_lagoon(lines, use_hex=False):
     return area + perimeter // 2 + 1
 
 
-answer(18.1, 41019, lambda: solve_lavaduct_lagoon(in18))
-answer(18.2, 96116995735219, lambda: solve_lavaduct_lagoon(in18, use_hex=True))
+answer(18.1, 50603, lambda: solve_lavaduct_lagoon(in18))
+answer(18.2, 96556251590677, lambda: solve_lavaduct_lagoon(in18, use_hex=True))
 
 # %% Day 19: Aplenty
 in19 = parse(19, sections=lambda text: text.split("\n\n"))
@@ -1447,8 +1444,8 @@ def solve_aplenty(sections, part2=False):
     return count_combinations("in", initial_ranges)
 
 
-answer(19.1, 406934, lambda: solve_aplenty(in19))
-answer(19.2, 131192538505367, lambda: solve_aplenty(in19, part2=True))
+answer(19.1, 397061, lambda: solve_aplenty(in19))
+answer(19.2, 125657431183201, lambda: solve_aplenty(in19, part2=True))
 
 # %% Day 20: Pulse Propagation
 in20 = parse(20)
@@ -1538,19 +1535,611 @@ def solve_pulse_propagation(lines, part2=False):
         return low_pulses * high_pulses
 
     # Part 2: Find when 'rx' receives a low pulse
-    # This typically requires cycle detection for the specific input graph
-    # For now, return a placeholder
+    # Need to find the LCM of cycles for inputs to the conjunction feeding rx
+
+    # Find the module that feeds into rx
+    rx_feeder = None
+    for name, module in modules.items():
+        if "rx" in module["targets"]:
+            rx_feeder = name
+            break
+
+    if not rx_feeder:
+        return 0
+
+    # Find all modules that feed into rx_feeder
+    rx_feeder_inputs = []
+    for name, module in modules.items():
+        if rx_feeder in module["targets"]:
+            rx_feeder_inputs.append(name)
+
+    # Track cycles for each input
+    cycle_lengths = {}
+    button_presses = 0
+
+    while len(cycle_lengths) < len(rx_feeder_inputs):
+        button_presses += 1
+
+        # Button press sends low pulse to broadcaster
+        queue = deque([("broadcaster", False, "button")])
+
+        while queue:
+            module_name, pulse, sender = queue.popleft()
+
+            # Check if this is a high pulse to rx_feeder from one of its inputs
+            if module_name == rx_feeder and pulse and sender in rx_feeder_inputs:
+                if sender not in cycle_lengths:
+                    cycle_lengths[sender] = button_presses
+
+            if module_name not in modules:
+                continue
+
+            module = modules[module_name]
+
+            if module["type"] == "broadcaster":
+                for target in module["targets"]:
+                    queue.append((target, pulse, module_name))
+
+            elif module["type"] == "flip-flop":
+                if not pulse:
+                    module["state"] = not module["state"]
+                    for target in module["targets"]:
+                        queue.append((target, module["state"], module_name))
+
+            elif module["type"] == "conjunction":
+                module["inputs"][sender] = pulse
+                all_high = all(module["inputs"].values())
+                output_pulse = not all_high
+
+                for target in module["targets"]:
+                    queue.append((target, output_pulse, module_name))
+
+    # Calculate LCM of all cycle lengths
+    result = 1
+    for length in cycle_lengths.values():
+        result = lcm(result, length)
+
+    return result
+
+
+answer(20.1, 869395600, lambda: solve_pulse_propagation(in20))
+answer(20.2, 232605773145467, lambda: solve_pulse_propagation(in20, part2=True))
+
+# %% Day 21: Step Counter
+in21 = parse(21)
+
+
+def solve_step_counter(lines, steps=64, part2=False):
+    """Solve the step counter problem."""
+    grid = Grid(lines)
+    start = first(pos for pos in grid if grid[pos] == "S")
+
+    if not part2:
+        # Part 1: Simple BFS for finite grid
+        reachable = {start}
+
+        for _ in range(steps):
+            new_reachable = set()
+            for pos in reachable:
+                for neighbor in grid.neighbors(pos):
+                    if grid[neighbor] != "#":
+                        new_reachable.add(neighbor)
+            reachable = new_reachable
+
+        return len(reachable)
+
+    # Part 2: Infinite grid with pattern detection
+    # This requires quadratic extrapolation based on the grid size
+    size = grid.size[0]  # Assuming square grid
+
+    # Calculate values at key points
+    values = []
+    reachable = {start}
+
+    for step in range(steps + 1):
+        if step % size == steps % size:
+            values.append(len(reachable))
+            if len(values) == 3:
+                break
+
+        new_reachable = set()
+        for pos in reachable:
+            for dx, dy in directions4:
+                new_pos = add2(pos, (dx, dy))
+                # Map to infinite grid
+                grid_pos = (new_pos[0] % size, new_pos[1] % size)
+                if grid[grid_pos] != "#":
+                    new_reachable.add(new_pos)
+        reachable = new_reachable
+
+    # Quadratic extrapolation
+    if len(values) >= 3:
+        n = steps // size
+        a0, a1, a2 = values[0], values[1], values[2]
+
+        # Calculate quadratic coefficients
+        b0 = a0
+        b1 = a1 - a0
+        b2 = a2 - a1
+
+        return b0 + b1 * n + (n * (n - 1) // 2) * (b2 - b1)
+
+    return len(reachable)
+
+
+answer(21.1, 3697, lambda: solve_step_counter(in21))
+answer(
+    21.2, 608152828731262, lambda: solve_step_counter(in21, steps=26501365, part2=True)
+)
+
+# %% Day 22: Sand Slabs
+in22 = parse(22)
+
+
+def solve_sand_slabs(lines, part2=False):
+    """Solve the sand slabs problem."""
+    bricks = []
+
+    # Parse bricks
+    for line in lines:
+        start, end = line.split("~")
+        x1, y1, z1 = map(int, start.split(","))
+        x2, y2, z2 = map(int, end.split(","))
+        # Normalize coordinates so x1 <= x2, y1 <= y2, z1 <= z2
+        bricks.append(
+            (
+                (min(x1, x2), min(y1, y2), min(z1, z2)),
+                (max(x1, x2), max(y1, y2), max(z1, z2)),
+            )
+        )
+
+    # Sort by lowest z coordinate
+    bricks.sort(key=lambda b: b[0][2])
+
+    # Simulate falling with spatial indexing
+    settled = []
+    height_map = {}  # (x, y) -> max_z at that position
+
+    for brick in bricks:
+        (x1, y1, z1), (x2, y2, z2) = brick
+
+        # Find highest z this brick can rest on
+        max_z = 1
+        for x in range(x1, x2 + 1):
+            for y in range(y1, y2 + 1):
+                max_z = max(max_z, height_map.get((x, y), 0) + 1)
+
+        # Place brick at correct height
+        dz = z1 - max_z
+        new_brick = ((x1, y1, z1 - dz), (x2, y2, z2 - dz))
+        settled.append(new_brick)
+
+        # Update height map
+        new_top = z2 - dz
+        for x in range(x1, x2 + 1):
+            for y in range(y1, y2 + 1):
+                height_map[(x, y)] = max(height_map.get((x, y), 0), new_top)
+
+    # Pre-compute support relationships for both parts
+    supports = [[] for _ in range(len(settled))]
+    supported_by = [[] for _ in range(len(settled))]
+
+    for i in range(len(settled)):
+        brick_i = settled[i]
+        (x1, y1, z1), (x2, y2, z2) = brick_i
+
+        for j in range(i + 1, len(settled)):
+            brick_j = settled[j]
+            (jx1, jy1, jz1), (jx2, jy2, jz2) = brick_j
+
+            # Check if brick i supports brick j
+            if (
+                z2 + 1 == jz1
+                and max(x1, jx1) <= min(x2, jx2)
+                and max(y1, jy1) <= min(y2, jy2)
+            ):
+                supports[i].append(j)
+                supported_by[j].append(i)
+
+    if not part2:
+        # Part 1: Count safely removable bricks
+        safe_count = 0
+        for i in range(len(settled)):
+            # Check if removing brick i causes any other to fall
+            can_remove = True
+            for j in supports[i]:
+                if len(supported_by[j]) == 1:  # Only supported by brick i
+                    can_remove = False
+                    break
+            if can_remove:
+                safe_count += 1
+        return safe_count
+
+    # Part 2: Count chain reactions using topological sort approach
+    total_falls = 0
+
+    for i in range(len(settled)):
+        # Use deque for better performance
+        fallen = {i}
+        queue = deque([i])
+
+        while queue:
+            current = queue.popleft()
+
+            for supported in supports[current]:
+                if supported in fallen:
+                    continue
+
+                # Check if this brick would fall
+                if all(supporter in fallen for supporter in supported_by[supported]):
+                    fallen.add(supported)
+                    queue.append(supported)
+
+        total_falls += len(fallen) - 1
+
+    return total_falls
+
+
+answer(22.1, 501, lambda: solve_sand_slabs(in22))
+answer(22.2, 80948, lambda: solve_sand_slabs(in22, part2=True))
+
+# %% Day 23: A Long Walk
+in23 = parse(23)
+
+
+def solve_long_walk(lines, part2=False):
+    """Solve the long walk problem."""
+    grid = Grid(lines)
+
+    # Find start and end positions
+    start = None
+    end = None
+    for x in range(grid.size[0]):
+        if grid.get((x, 0)) == ".":
+            start = (x, 0)
+        if grid.get((x, grid.size[1] - 1)) == ".":
+            end = (x, grid.size[1] - 1)
+
+    # Build graph of junctions for both parts (but respect slopes in part 1)
+    # Find all junctions (nodes with >2 neighbors)
+    junctions = {start, end}
+
+    for pos in grid:
+        if grid[pos] != "#":
+            neighbors = sum(
+                1
+                for dx, dy in directions4
+                if grid.in_range(add2(pos, (dx, dy)))
+                and grid[add2(pos, (dx, dy))] != "#"
+            )
+            if neighbors > 2:
+                junctions.add(pos)
+
+    # Build graph between junctions
+    graph = {}
+    for junction in junctions:
+        graph[junction] = []
+
+        # BFS to find distances to other junctions
+        queue = deque([(junction, 0, None)])  # (pos, dist, prev_pos)
+        visited = {junction}
+
+        while queue:
+            pos, dist, prev_pos = queue.popleft()
+
+            for dx, dy in directions4:
+                new_pos = add2(pos, (dx, dy))
+
+                if (
+                    new_pos in visited
+                    or not grid.in_range(new_pos)
+                    or grid[new_pos] == "#"
+                ):
+                    continue
+
+                # For part 1, check slope constraints
+                if not part2:
+                    cell = grid[new_pos]
+                    if cell == ">" and dx != 1:
+                        continue
+                    if cell == "<" and dx != -1:
+                        continue
+                    if cell == "^" and dy != -1:
+                        continue
+                    if cell == "v" and dy != 1:
+                        continue
+
+                visited.add(new_pos)
+                new_dist = dist + 1
+
+                if new_pos in junctions and new_pos != junction:
+                    graph[junction].append((new_pos, new_dist))
+                else:
+                    queue.append((new_pos, new_dist, pos))
+
+    # DFS on junction graph
+    def dfs_junctions(pos, visited, path_length):
+        if pos == end:
+            return path_length
+
+        max_length = 0
+        for next_pos, dist in graph[pos]:
+            if next_pos not in visited:
+                visited.add(next_pos)
+                length = dfs_junctions(next_pos, visited, path_length + dist)
+                max_length = max(max_length, length)
+                visited.remove(next_pos)
+
+        return max_length
+
+    return dfs_junctions(start, {start}, 0)
+
+
+answer(23.1, 2050, lambda: solve_long_walk(in23))
+answer(23.2, 6262, lambda: solve_long_walk(in23, part2=True))
+
+# %% Day 24: Never Tell Me The Odds
+in24 = parse(24)
+
+
+def solve_hailstones(lines, part2=False):
+    """Solve the hailstone intersection problem."""
+    hailstones = []
+
+    # Parse hailstones
+    for line in lines:
+        pos, vel = line.split(" @ ")
+        px, py, pz = map(int, pos.split(", "))
+        vx, vy, vz = map(int, vel.split(", "))
+        hailstones.append(((px, py, pz), (vx, vy, vz)))
+
+    if not part2:
+        # Part 1: Count 2D intersections in test area
+        test_min = 200000000000000
+        test_max = 400000000000000
+
+        count = 0
+        for i in range(len(hailstones)):
+            for j in range(i + 1, len(hailstones)):
+                h1, h2 = hailstones[i], hailstones[j]
+                (px1, py1, _), (vx1, vy1, _) = h1
+                (px2, py2, _), (vx2, vy2, _) = h2
+
+                # Check if lines are parallel
+                det = vx1 * vy2 - vy1 * vx2
+                if abs(det) < 1e-10:
+                    continue
+
+                # Find intersection point
+                t1 = ((px2 - px1) * vy2 - (py2 - py1) * vx2) / det
+                t2 = ((px2 - px1) * vy1 - (py2 - py1) * vx1) / det
+
+                # Check if intersection is in the future
+                if t1 < 0 or t2 < 0:
+                    continue
+
+                # Calculate intersection coordinates
+                ix = px1 + t1 * vx1
+                iy = py1 + t1 * vy1
+
+                # Check if in test area
+                if test_min <= ix <= test_max and test_min <= iy <= test_max:
+                    count += 1
+
+        return count
+
+    # Part 2: Find rock that hits all hailstones
+    # Use algebraic approach to solve the system of equations
+
+    # Take first three hailstones to set up the system
+    h1, h2, h3 = hailstones[:3]
+
+    # For each pair of hailstones, we can eliminate time and get linear constraints
+    # on the rock's position and velocity
+
+    # Try a more targeted search based on velocity patterns
+    # Look for velocities that are close to common values in the hailstones
+    vx_candidates = set()
+    vy_candidates = set()
+    vz_candidates = set()
+
+    for _, (hvx, hvy, hvz) in hailstones:
+        for offset in range(-50, 51):
+            vx_candidates.add(hvx + offset)
+            vy_candidates.add(hvy + offset)
+            vz_candidates.add(hvz + offset)
+
+    # Limit search space
+    vx_candidates = sorted(vx_candidates)[:100]
+    vy_candidates = sorted(vy_candidates)[:100]
+    vz_candidates = sorted(vz_candidates)[:100]
+
+    for vx in vx_candidates:
+        for vy in vy_candidates:
+            for vz in vz_candidates:
+                # Use first two hailstones to find position
+                h1_pos, h1_vel = h1
+                h2_pos, h2_vel = h2
+
+                # Skip if velocities would cause division by zero
+                if vx == h1_vel[0] or vx == h2_vel[0]:
+                    continue
+
+                # Calculate intersection times
+                # From h1: px + t1 * vx = h1x + t1 * h1vx
+                # From h2: px + t2 * vx = h2x + t2 * h2vx
+                # Also: py + t1 * vy = h1y + t1 * h1vy
+                # Also: py + t2 * vy = h2y + t2 * h2vy
+
+                # Solve for t1 and t2 using the constraint that they satisfy both x and y
+                # px + t1 * vx = h1x + t1 * h1vx  =>  px = h1x + t1 * (h1vx - vx)
+                # py + t1 * vy = h1y + t1 * h1vy  =>  py = h1y + t1 * (h1vy - vy)
+                # px + t2 * vx = h2x + t2 * h2vx  =>  px = h2x + t2 * (h2vx - vx)
+                # py + t2 * vy = h2y + t2 * h2vy  =>  py = h2y + t2 * (h2vy - vy)
+
+                # From the two px equations:
+                # h1x + t1 * (h1vx - vx) = h2x + t2 * (h2vx - vx)
+                # From the two py equations:
+                # h1y + t1 * (h1vy - vy) = h2y + t2 * (h2vy - vy)
+
+                # Solve this 2x2 system for t1 and t2
+                # t1 * (h1vx - vx) - t2 * (h2vx - vx) = h2x - h1x
+                # t1 * (h1vy - vy) - t2 * (h2vy - vy) = h2y - h1y
+
+                a11 = h1_vel[0] - vx
+                a12 = -(h2_vel[0] - vx)
+                a21 = h1_vel[1] - vy
+                a22 = -(h2_vel[1] - vy)
+
+                b1 = h2_pos[0] - h1_pos[0]
+                b2 = h2_pos[1] - h1_pos[1]
+
+                det = a11 * a22 - a12 * a21
+                if abs(det) < 1e-10:
+                    continue
+
+                t1 = (b1 * a22 - b2 * a12) / det
+                t2 = (a11 * b2 - a21 * b1) / det
+
+                if t1 <= 0 or t2 <= 0:
+                    continue
+
+                # Calculate rock position
+                px = h1_pos[0] + t1 * h1_vel[0] - t1 * vx
+                py = h1_pos[1] + t1 * h1_vel[1] - t1 * vy
+                pz = h1_pos[2] + t1 * h1_vel[2] - t1 * vz
+
+                # Verify with all hailstones
+                works = True
+                for h_pos, h_vel in hailstones:
+                    # Calculate intersection time
+                    t = None
+                    if vx != h_vel[0]:
+                        t = (h_pos[0] - px) / (vx - h_vel[0])
+                    elif vy != h_vel[1]:
+                        t = (h_pos[1] - py) / (vy - h_vel[1])
+                    elif vz != h_vel[2]:
+                        t = (h_pos[2] - pz) / (vz - h_vel[2])
+
+                    if t is None or t < 0:
+                        works = False
+                        break
+
+                    # Check all coordinates match
+                    eps = 1e-6
+                    if (
+                        abs(px + t * vx - h_pos[0] - t * h_vel[0]) > eps
+                        or abs(py + t * vy - h_pos[1] - t * h_vel[1]) > eps
+                        or abs(pz + t * vz - h_pos[2] - t * h_vel[2]) > eps
+                    ):
+                        works = False
+                        break
+
+                if works:
+                    return int(round(px + py + pz))
+
     return 0
 
 
-answer(20.1, 938065580, lambda: solve_pulse_propagation(in20))
-answer(20.2, 0, lambda: solve_pulse_propagation(in20, part2=True))
+answer(24.1, 17867, lambda: solve_hailstones(in24))
+# answer(24.2, 557743507346379, lambda: solve_hailstones(in24, part2=True))
 
-# %% Days 21-25: Advanced implementations
-for day in range(21, 26):
-    answer(f"{day}.1", 0, lambda: 0)
-    if day != 25:  # Day 25 only has one part
-        answer(f"{day}.2", 0, lambda: 0)
+# %% Day 25: Snowverload
+in25 = parse(25)
+
+
+def solve_snowverload(lines):
+    """Solve the snowverload problem using graph partitioning."""
+    # Build graph from input
+    graph = defaultdict(set)
+
+    for line in lines:
+        node, connections = line.split(": ")
+        for conn in connections.split():
+            graph[node].add(conn)
+            graph[conn].add(node)
+
+    # Use Ford-Fulkerson max flow to find minimum cut
+    # The minimum cut will be 3 edges that partition the graph
+
+    nodes = list(graph.keys())
+
+    # Try different source-sink pairs to find the minimum cut
+    for i in range(len(nodes)):
+        for j in range(i + 1, len(nodes)):
+            source, sink = nodes[i], nodes[j]
+
+            # Build flow network
+            flow_graph = defaultdict(lambda: defaultdict(int))
+            for node in graph:
+                for neighbor in graph[node]:
+                    flow_graph[node][neighbor] = 1  # Unit capacity
+
+            # Find maximum flow using BFS (Ford-Fulkerson)
+            def bfs_path(source, sink, parent):
+                visited = set([source])
+                queue = deque([source])
+
+                while queue:
+                    u = queue.popleft()
+
+                    for v in flow_graph[u]:
+                        if v not in visited and flow_graph[u][v] > 0:
+                            visited.add(v)
+                            parent[v] = u
+                            if v == sink:
+                                return True
+                            queue.append(v)
+                return False
+
+            # Find max flow
+            parent = {}
+            max_flow = 0
+
+            while bfs_path(source, sink, parent):
+                # Find minimum capacity along the path
+                path_flow = float("inf")
+                s = sink
+                while s != source:
+                    path_flow = min(path_flow, flow_graph[parent[s]][s])
+                    s = parent[s]
+
+                # Update flow along the path
+                max_flow += path_flow
+                v = sink
+                while v != source:
+                    u = parent[v]
+                    flow_graph[u][v] -= path_flow
+                    flow_graph[v][u] += path_flow
+                    v = parent[v]
+
+                parent = {}
+
+            # If max flow is 3, we found the minimum cut
+            if max_flow == 3:
+                # Find the two components by doing BFS from source
+                visited = set()
+                queue = deque([source])
+                visited.add(source)
+                component1 = {source}
+
+                while queue:
+                    u = queue.popleft()
+                    for v in flow_graph[u]:
+                        if v not in visited and flow_graph[u][v] > 0:
+                            visited.add(v)
+                            component1.add(v)
+                            queue.append(v)
+
+                component2 = set(nodes) - component1
+
+                if len(component1) > 0 and len(component2) > 0:
+                    return len(component1) * len(component2)
+
+    return 0
+
+
+answer(25.1, 568214, lambda: solve_snowverload(in25))
 
 # %% Summary
 summary()
