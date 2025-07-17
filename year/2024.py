@@ -124,10 +124,6 @@ def solve_day2_part2(data):
 answer(2.1, 224, lambda: solve_day2_part1(in2))
 answer(2.2, 293, lambda: solve_day2_part2(in2))
 
-
-# %% Summary
-summary()
-
 # %% Day 3: Mull It Over
 in3 = parse(3)
 
@@ -2527,10 +2523,7 @@ def solve_day25_part1(lines):
     return valid_pairs
 
 
-def solve_day25_part2(lines):
-    """Day 25 typically only has one part."""
-    return "Merry Christmas!"
-
-
 answer(25.1, 3269, lambda: solve_day25_part1(in25))
-answer(25.2, None, lambda: solve_day25_part2(in25))
+
+# %% Summary
+summary()
